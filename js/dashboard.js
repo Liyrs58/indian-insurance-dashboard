@@ -13,6 +13,8 @@ let emaSeries = null;
 let chartPeriod = 'all';
 let selectedMonth = null;
 let viewMonthSelection = {};
+let comparisonMode = false;
+let comparisonCompanies = [];
 
 var FIELD_MAP = {
   premium: 'premium_cr',
@@ -596,6 +598,15 @@ function setupKeys() {
 }
 
 function switchView(view) {
+  if (comparisonMode) {
+    comparisonMode = false;
+    comparisonCompanies = [];
+    if (table) { table.destroy(); table = null; }
+    if (emaSeries && chart) { chart.removeSeries(emaSeries); emaSeries = null; }
+    showEMA = false;
+    if (chart) { chart.remove(); chart = null; chartSeries = []; }
+    renderedTabs = {};
+  }
   document.querySelectorAll('#navTabs .nav-tab').forEach(function(n) {
     n.classList.toggle('active', n.dataset.view === view);
   });
@@ -618,6 +629,23 @@ function setupCmd() {
       else if (cmd === 'export') { exportCSV(); }
       else if (cmd === 'splash' || cmd === 'i') { showSplash(); }
       else if (cmd === 'audit' || cmd === 'sources') { showAudit(); }
+      else if (cmd.indexOf('compare ') === 0) {
+        var rest = raw.slice(8).trim();
+        var parts = rest.indexOf(' vs ') !== -1 ? rest.split(' vs ') : (rest.indexOf(',') !== -1 ? rest.split(',') : rest.split(/\s+/, 2));
+        if (parts.length < 2 || !parts[1]) {
+          document.getElementById('cmdStatus').textContent = 'Usage: compare <name1> vs <name2> or compare <name1>,<name2>';
+          setTimeout(updateCmdStatus, 3000);
+          return;
+        }
+        startCompanyComparison(parts[0].trim(), parts[1].trim());
+      }
+      else if (cmd === 'exit' || cmd === 'clear') {
+        if (comparisonMode) { exitCompanyComparison(); }
+        else if (table) { table.clearFilter(true); updateCmdStatus(); }
+      }
+      else if (cmd === 'export pdf' || cmd === 'print') {
+        window.print();
+      }
       else if (cmd.indexOf('search ') === 0) {
         applySearchFilter(raw.slice(raw.indexOf(' ') + 1));
       } else {
@@ -665,6 +693,9 @@ function showHelp() {
       '<span style="color:var(--cyan)">search &lt;name&gt;</span><span>Filter table by company name</span>' +
       '<span style="color:var(--cyan)">audit / sources</span><span>Open data quality and source audit</span>' +
       '<span style="color:var(--cyan)">export</span><span>Download table as CSV</span>' +
+      '<span style="color:var(--cyan)">export pdf / print</span><span>Export dashboard as PDF</span>' +
+      '<span style="color:var(--cyan)">compare &lt;a&gt; vs &lt;b&gt;</span><span>Compare two companies</span>' +
+      '<span style="color:var(--cyan)">exit</span><span>Exit comparison / clear search</span>' +
       '<span style="color:var(--cyan)">F / fit</span><span>Reset chart zoom</span>' +
       '<span style="color:var(--cyan)">E / ema</span><span>Toggle EMA overlay</span>' +
       '<span style="color:var(--cyan)">I / splash</span><span>IRDAI market overview splash</span>' +
@@ -1282,9 +1313,15 @@ function applyPeriod(data) {
 
 function updateChart() {
   if (!chart) return;
-  // Remove all existing series
   chartSeries.forEach(function(s) { chart.removeSeries(s); });
   chartSeries = [];
+
+  if (comparisonMode && comparisonCompanies.length === 2) {
+    renderCompanyComparisonChart();
+    var caveatEl = document.getElementById('chartCaveat');
+    if (caveatEl) caveatEl.textContent = '\u26A0 Individual company premium trends; not adjusted for market growth.';
+    return;
+  }
 
   var data, color;
   if (chartType === 'all' || chartType === 'overview') {
@@ -1693,4 +1730,206 @@ function renderPenetration() {
       '<div class="value" style="color:var(--amber)">' + (gap * 2).toFixed(0) + 'x</div>' +
       '<div class="desc">India needs to grow penetration ' + (gap * 2).toFixed(0) + 'x to match global peers</div>' +
     '</div>';
+}
+
+// ─── Company Comparison ────────────────────────────────────────────
+function resolveCompanyName(input) {
+  if (!input || !DATA) return null;
+  var q = input.trim().toLowerCase();
+  for (var key in COMPANY_DB) {
+    if (key.toLowerCase().indexOf(q) !== -1 || q.indexOf(key.toLowerCase()) !== -1) {
+      return { name: key, profile: COMPANY_DB[key] };
+    }
+  }
+  var allData = [].concat(DATA.life ? DATA.life.monthly_data : [], DATA.non_life ? DATA.non_life.monthly_data : []);
+  for (var i = 0; i < allData.length; i++) {
+    var insurers = allData[i].insurers || [];
+    for (var j = 0; j < insurers.length; j++) {
+      var n = insurers[j].name;
+      if (n.toLowerCase().indexOf(q) !== -1) {
+        return { name: n, profile: lookupCompany(n) };
+      }
+    }
+  }
+  return null;
+}
+
+function getCompanyPremiumHistory(name) {
+  var history = [];
+  ['life', 'non_life'].forEach(function(segKey) {
+    (DATA[segKey] ? DATA[segKey].monthly_data : []).forEach(function(m) {
+      (m.insurers || []).forEach(function(i) {
+        if (i.name === name) {
+          history.push({ time: m.month, value: i.premium_cr, segment: segKey });
+        }
+      });
+    });
+  });
+  history.sort(function(a, b) { return a.time.localeCompare(b.time); });
+  return history;
+}
+
+function getScopeForCompany(name) {
+  var life = getLifeLatest();
+  if (life && life.insurers.some(function(i) { return i.name === name; })) {
+    return { segment: 'life', month: life.month };
+  }
+  var nonlife = getNonLifeLatest();
+  if (nonlife && nonlife.insurers.some(function(i) { return i.name === name; })) {
+    return { segment: 'non_life', month: nonlife.month };
+  }
+  return { segment: null, month: null };
+}
+
+function startCompanyComparison(input1, input2) {
+  var r1 = resolveCompanyName(input1);
+  var r2 = resolveCompanyName(input2);
+  if (!r1) { document.getElementById('cmdStatus').textContent = 'Company not found: ' + input1; setTimeout(updateCmdStatus, 3000); return; }
+  if (!r2) { document.getElementById('cmdStatus').textContent = 'Company not found: ' + input2; setTimeout(updateCmdStatus, 3000); return; }
+  if (r1.name === r2.name) { document.getElementById('cmdStatus').textContent = 'Cannot compare a company with itself'; setTimeout(updateCmdStatus, 3000); return; }
+
+  comparisonMode = 'company';
+  comparisonCompanies = [r1, r2];
+  document.getElementById('cmdStatus').textContent = 'Comparing: ' + shortName(r1.name) + ' vs ' + shortName(r2.name) + '. Type "exit" to clear.';
+
+  if (table) { table.destroy(); table = null; }
+  if (emaSeries && chart) { chart.removeSeries(emaSeries); emaSeries = null; }
+  showEMA = false;
+  if (chart) { chart.remove(); chart = null; chartSeries = []; }
+  renderedTabs = {};
+
+  renderCompanyComparison();
+}
+
+function exitCompanyComparison() {
+  comparisonMode = false;
+  comparisonCompanies = [];
+  if (table) { table.destroy(); table = null; }
+  if (emaSeries && chart) { chart.removeSeries(emaSeries); emaSeries = null; }
+  showEMA = false;
+  if (chart) { chart.remove(); chart = null; chartSeries = []; }
+  renderedTabs = {};
+  renderView(currentView);
+}
+
+function companyCardHtml(name, data, scope) {
+  var color = scope.segment === 'life' ? 'var(--green)' : 'var(--cyan)';
+  var profile = lookupCompany(name);
+  var stockHtml = '';
+  if (profile && profile.ticker) {
+    var sp = getStockPrice(profile.ticker);
+    if (sp && sp.price) stockHtml = '<div style="margin-top:6px;padding-top:4px;border-top:1px solid var(--border);font-size:9px;display:grid;grid-template-columns:90px 1fr;gap:2px 8px;"><span style="color:var(--gray2)">NSE</span><span style="color:var(--amber)">' + profile.ticker.replace('.NS','') + ' ₹' + sp.price.toFixed(2) + '</span></div>';
+  }
+  return '<div style="background:var(--bg3);border:1px solid ' + color + ';padding:10px;">' +
+    '<div style="color:' + color + ';font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:6px;">' + shortName(name) + '</div>' +
+    '<div style="display:grid;grid-template-columns:90px 1fr;gap:4px 8px;font-size:9px;">' +
+      (data ? '' +
+        '<span style="color:var(--gray2)">Premium</span><span style="color:var(--white)">' + fmtCr(data.premium_cr) + '</span>' +
+        '<span style="color:var(--gray2)">Share</span><span style="color:var(--amber)">' + (data.market_share_pct != null ? data.market_share_pct.toFixed(1) + '%' : '<span style="color:var(--gray2)">--</span>') + '</span>' +
+        '<span style="color:var(--gray2)">YoY</span><span style="color:' + (data.yoy_growth_pct >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmtPct(data.yoy_growth_pct) + '</span>' +
+        '<span style="color:var(--gray2)">3M CAGR</span><span style="color:' + (data.cagr_3m >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (data.cagr_3m != null ? fmtPct(data.cagr_3m) : '<span style="color:var(--gray2)">--</span>') + '</span>' +
+        '<span style="color:var(--gray2)">Share Chg</span><span style="color:' + (data.share_chg_pp >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (data.share_chg_pp != null ? (data.share_chg_pp >= 0 ? '+' : '') + data.share_chg_pp.toFixed(2) + 'pp' : '<span style="color:var(--gray2)">--</span>') + '</span>' +
+        '<span style="color:var(--gray2)">Segment</span><span style="color:' + color + '">' + segmentDisplayLabel(scope.segment) + '</span>'
+      : '<span style="color:var(--gray2)">No data for this period</span>') +
+    '</div>' + stockHtml +
+    (profile && profile.desc ? '<div style="margin-top:6px;font-size:8px;color:var(--gray2);line-height:1.5;">' + profile.desc + '</div>' : '') +
+  '</div>';
+}
+
+function renderCompanyComparison() {
+  if (comparisonCompanies.length !== 2) return;
+  var c1 = comparisonCompanies[0];
+  var c2 = comparisonCompanies[1];
+  var scope1 = getScopeForCompany(c1.name);
+  var scope2 = getScopeForCompany(c2.name);
+
+  document.getElementById('tableTitle').textContent = 'COMPARE: ' + shortName(c1.name) + ' vs ' + shortName(c2.name);
+  var pair = getSharedMonthPair(selectedMonth);
+  document.getElementById('tableMonth').textContent = (pair && pair.month) ? pair.month + ' shared' : '--';
+
+  function getDataForCompany(name, scope, pair) {
+    if (!pair) return null;
+    var m = scope.segment === 'life' ? pair.life : pair.nonlife;
+    if (!m || !m.insurers) return null;
+    for (var i = 0; i < m.insurers.length; i++) {
+      if (m.insurers[i].name === name) return Object.assign({}, m.insurers[i]);
+    }
+    return null;
+  }
+
+  var d1 = getDataForCompany(c1.name, scope1, pair);
+  var d2 = getDataForCompany(c2.name, scope2, pair);
+  var enriched1 = d1 ? enrichInsurers([d1], scope1.segment, (pair && pair.month) || '') : null;
+  var enriched2 = d2 ? enrichInsurers([d2], scope2.segment, (pair && pair.month) || '') : null;
+  var e1 = (enriched1 && enriched1[0]) || d1;
+  var e2 = (enriched2 && enriched2[0]) || d2;
+
+  document.getElementById('tableContainer').innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px;">' +
+      companyCardHtml(c1.name, e1, scope1) +
+      companyCardHtml(c2.name, e2, scope2) +
+    '</div>';
+
+  updateChartData('company_compare');
+  renderCompanyComparisonInsights(e1, e2, c1, c2, scope1, scope2, pair);
+}
+
+function renderCompanyComparisonInsights(d1, d2, c1, c2, scope1, scope2, pair) {
+  var monthLabel = (pair && pair.month) ? pair.month : 'latest';
+  var html = '<div class="insight-card">' +
+    '<div class="label">COMPARISON: ' + shortName(c1.name) + ' vs ' + shortName(c2.name) + '</div>' +
+    '<div class="desc" style="font-size:8px;margin-top:2px;color:var(--gray)">Shared month: ' + monthLabel + '</div>' +
+  '</div>';
+
+  if (d1 && d2) {
+    var diffPremium = d1.premium_cr - d2.premium_cr;
+    var diffGrowth = d1.yoy_growth_pct - d2.yoy_growth_pct;
+    html += '<div class="insight-grid">' +
+      '<div class="insight-card"><div class="label">Premium Gap</div><div class="value" style="color:var(--amber);font-size:11px;">' + fmtCr(Math.abs(diffPremium)) + '</div><div class="desc">' + (diffPremium > 0 ? shortName(c1.name) : shortName(c2.name)) + ' leads</div></div>' +
+      '<div class="insight-card"><div class="label">Growth Delta</div><div class="value" style="color:' + (diffGrowth >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmtPct(diffGrowth) + '</div><div class="desc">YoY advantage</div></div>' +
+    '</div>';
+    html += '<div class="insight-card" style="margin-top:4px;"><div class="label">Market Position</div><div class="desc" style="font-size:9px;margin-top:2px;">' + shortName(c1.name) + ' (' + (scope1.segment === 'life' ? 'Life' : 'Non-Life') + ') vs ' + shortName(c2.name) + ' (' + (scope2.segment === 'life' ? 'Life' : 'Non-Life') + ')</div></div>';
+
+    if (d1.market_share_pct != null && d2.market_share_pct != null && d2.market_share_pct > 0) {
+      var shareRatio = d1.market_share_pct / d2.market_share_pct;
+      html += '<div class="insight-card"><div class="label">Share Ratio</div><div class="value" style="color:var(--purple)">' + shareRatio.toFixed(1) + 'x</div><div class="desc">' + shortName(c1.name) + ' is ' + shareRatio.toFixed(1) + 'x larger by share</div></div>';
+    }
+  } else {
+    html += '<div class="insight-card"><div class="label">Data Note</div><div class="desc" style="font-size:8px;color:var(--gray2)">One or both companies lack data for the selected period.</div></div>';
+  }
+
+  html += '<div class="insight-card" style="margin-top:4px;"><div class="label">Chart Key</div><div class="desc" style="font-size:8px;margin-top:2px;color:var(--gray2)">Premium trend: ' + shortName(c1.name) + ' (' + (scope1.segment === 'life' ? 'green' : 'cyan') + ' line) vs ' + shortName(c2.name) + ' (amber line). Raw premium over available months.</div></div>';
+
+  html += '<div class="insight-card" style="margin-top:4px;"><div class="label">Exit</div><div class="desc" style="font-size:8px;margin-top:2px;color:var(--gray2)">Type "exit" or press 1-4 to exit comparison mode.</div></div>';
+
+  document.getElementById('insights-tab').innerHTML = html;
+}
+
+function renderCompanyComparisonChart() {
+  var c1 = comparisonCompanies[0];
+  var c2 = comparisonCompanies[1];
+  var hist1 = getCompanyPremiumHistory(c1.name);
+  var hist2 = getCompanyPremiumHistory(c2.name);
+  var scope1 = getScopeForCompany(c1.name);
+  var scope2 = getScopeForCompany(c2.name);
+  var color1 = scope1.segment === 'life' ? '#00cc44' : '#00ccff';
+  var color2 = '#ff9900';
+
+  if (hist1.length) {
+    var s1 = chart.addLineSeries({
+      color: color1, lineWidth: 2, lastValueVisible: true,
+      priceFormat: { type: 'volume' },
+    });
+    s1.setData(applyPeriod(hist1));
+    chartSeries.push(s1);
+  }
+  if (hist2.length) {
+    var s2 = chart.addLineSeries({
+      color: color2, lineWidth: 2, lastValueVisible: true,
+      priceFormat: { type: 'volume' },
+    });
+    s2.setData(applyPeriod(hist2));
+    chartSeries.push(s2);
+  }
+  chart.timeScale().fitContent();
 }

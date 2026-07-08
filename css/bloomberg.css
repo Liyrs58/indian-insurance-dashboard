@@ -864,3 +864,47 @@ body::after {
   .cmd-status { font-size: 7px; }
   .ticker-scroll { animation-duration: 180s; }
 }
+
+/* ─── PRINT / PDF ───────────────────────────────────────── */
+@media print {
+  @page { margin: 10mm; size: A4 portrait; }
+  body { background: #fff !important; color: #111 !important; }
+  body::after { display: none !important; }
+  .topbar, .ticker-tape, .kpi-strip, .command-bar,
+  .panel-tabs, .chart-controls, .popup-overlay,
+  .month-select, .panel-cmd, .tf-btn, .period-btn,
+  .cmd-prompt, .cmd-input, .cmd-status, .topbar-status,
+  .user-badge, .topbar-time, .logo, .nav-tabs, .nav-tab,
+  .topbar-right, #chartCaveat { display: none !important; }
+  .terminal { display: block !important; height: auto !important; overflow: visible !important; }
+  .main-grid { display: block !important; }
+  .panel { page-break-inside: avoid !important; border: 0.5px solid #ccc !important; margin-bottom: 8mm !important; }
+  .panel-header { background: #eee !important; border-bottom: 1px solid #ccc !important; }
+  .panel-title { color: #222 !important; font-size: 9px !important; }
+  .panel-left { grid-row: auto !important; border: none !important; max-height: none !important; }
+  .panel-body { overflow: visible !important; max-height: none !important; }
+  .tab-content { display: block !important; }
+  .chart-area { min-height: 160px !important; border: 0.5px solid #ddd !important; }
+  .chart-panel-body.fullscreen { position: static !important; }
+  .chart-ticker-row { display: flex !important; }
+  .chart-ticker { color: #222 !important; }
+  .chart-price { color: #444 !important; }
+  .chart-meta span { color: #666 !important; }
+  .tabulator { color: #222 !important; background: transparent !important; }
+  .tabulator-header { background: #eee !important; border-color: #ddd !important; }
+  .tabulator-col { background: #eee !important; color: #666 !important; }
+  .tabulator-table { color: #222 !important; background: #fff !important; }
+  .tabulator-row { border-color: #eee !important; background: #fff !important; }
+  .tabulator-row .tabulator-cell { color: #222 !important; }
+  .insight-card { background: #f8f8f8 !important; border-color: #ddd !important; }
+  .insight-card .label { color: #888 !important; }
+  .insight-card .value { color: #222 !important; }
+  .insight-card .desc { color: #aaa !important; }
+  .player-row { border-color: #eee !important; }
+  .player-name { color: #0055aa !important; }
+  .kpi-item { background: #f5f5f5 !important; }
+  .kpi-label { color: #888 !important; }
+  .kpi-value { color: #222 !important; font-size: 10px !important; }
+  .kpi-sub { color: #aaa !important; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}
