@@ -80,6 +80,36 @@
 | 6 | **HHI/Movers per-view** | Lazy-render tracked per view (`currentView + '-hhi'`) — no re-render on tab switch |
 | 7 | **README fixed** | Matches actual stack (LightweightCharts, Tabulator, IBM Plex Mono, Clearbit) |
 
+## Phase Completion (Jul 8)
+
+### Phase 1 — Bug Fixes ✅
+| Bug | Fix |
+|-----|-----|
+| Non-life `total_growth_pct` always 0 | Weighted avg calculation in `parse_non_life_excel()` |
+| Chart month misalignment | Match by month string, not array index |
+| Loading state missing | Skeleton pulse CSS + `body.loading` toggle |
+| HHI/Movers re-render on view switch | Per-view caching (`currentView + '-hhi'`) |
+
+### Phase 2 — Data Depth ✅
+- Non-life growth rates now calculated correctly (10-12% range)
+- Chart period filter (1M/3M/6M/ALL) controls time window
+- Data regenerated from latest IRDAI Excel files
+
+### Phase 3 — Visual & UX Professionalism ✅
+| Feature | Detail |
+|---------|--------|
+| Loading skeleton | Animated pulse on KPI/table/chart/insights while data loads |
+| Chart zoom/pan | Scroll to zoom, drag to pan, FIT button, `F` key |
+| Ticker interleaved | Life (green) + Non-life (cyan) + NSE stocks (amber) |
+| Export CSV | `export` command downloads visible table |
+| Company logos | Clearbit API in popup (20+ domains) |
+| Keyboard shortcuts | `?` help, `F` fit, `E` EMA, `1-4` views, `Esc` close |
+| Fullscreen chart | Double-click chart panel expands to full viewport |
+| KPI tooltips | Hover shows raw values and descriptions |
+| Period buttons | 1M / 3M / 6M / ALL filter chart data window |
+| EMA overlay | Toggleable 3-period moving average via `E` key |
+| README | Updated to match actual stack |
+
 ## Next Steps
 - Run multi-agent analysis on latest data
 - Evaluate Ogury Learning Internship (12 months)
