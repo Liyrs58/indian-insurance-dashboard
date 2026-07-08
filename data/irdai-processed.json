@@ -222,7 +222,7 @@
           }
         ],
         "total_premium_cr": 249944.96,
-        "total_growth_pct": 0
+        "total_growth_pct": 10.54
       },
       {
         "month": "2026-01",
@@ -433,7 +433,7 @@
           }
         ],
         "total_premium_cr": 283185.16,
-        "total_growth_pct": 0
+        "total_growth_pct": 10.66
       },
       {
         "month": "2026-02",
@@ -644,7 +644,7 @@
           }
         ],
         "total_premium_cr": 307021.93,
-        "total_growth_pct": 0
+        "total_growth_pct": 10.38
       },
       {
         "month": "2026-03",
@@ -855,7 +855,7 @@
           }
         ],
         "total_premium_cr": 335918.07,
-        "total_growth_pct": 0
+        "total_growth_pct": 10.26
       },
       {
         "month": "2026-05",
@@ -1072,7 +1072,7 @@
           }
         ],
         "total_premium_cr": 60594.06,
-        "total_growth_pct": 0
+        "total_growth_pct": 12.59
       }
     ]
   },

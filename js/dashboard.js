@@ -10,6 +10,7 @@ let resizeHandler = null;
 let renderedTabs = {};
 let showEMA = false;
 let emaSeries = null;
+let chartPeriod = 'all';
 
 // ─── Company Enrichment DB ──────────────────────────────────────────
 const COMPANY_DB = {
@@ -101,6 +102,17 @@ function getStockPrice(ticker) {
 
 function fitChart() {
   if (chart) chart.timeScale().fitContent();
+}
+
+var fullscreenChart = false;
+function toggleFullscreenChart() {
+  var el = document.querySelector('.chart-panel-body');
+  if (!el) return;
+  fullscreenChart = !fullscreenChart;
+  el.classList.toggle('fullscreen', fullscreenChart);
+  setTimeout(function() {
+    if (chart) chart.resize(el.clientWidth, el.clientHeight || 300);
+  }, 50);
 }
 
 // ─── Load ───────────────────────────────────────────────────────────
@@ -225,15 +237,15 @@ function renderTicker() {
 function renderKPI() {
   var s = DATA.summary;
   var kpis = [
-    { label: 'TOTAL MARKET', value: '\u20B9' + (s.total_market_premium_cr/1000).toFixed(1) + 'K Cr', sub: 'FY2025-26', color: 'var(--amber)' },
-    { label: 'LIFE PREMIUM', value: '\u20B9' + (s.life_premium_cr/1000).toFixed(1) + 'K Cr', sub: Math.round((s.life_premium_cr/s.total_market_premium_cr)*100) + '% share', color: 'var(--green)' },
-    { label: 'NON-LIFE', value: '\u20B9' + (s.non_life_premium_cr/1000).toFixed(1) + 'K Cr', sub: Math.round((s.non_life_premium_cr/s.total_market_premium_cr)*100) + '% share', color: 'var(--cyan)' },
-    { label: 'PENETRATION', value: s.insurance_penetration_pct + '%', sub: 'Global: ' + s.global_penetration_avg_pct + '%', color: 'var(--purple)' },
-    { label: 'DENSITY', value: '$' + s.insurance_density_usd, sub: 'Per capita', color: 'var(--orange)' },
-    { label: 'PLAYERS', value: getLifeLatest().insurers.length + getNonLifeLatest().insurers.length, sub: 'Monitored', color: 'var(--pink)' },
+    { label: 'TOTAL MARKET', value: '\u20B9' + (s.total_market_premium_cr/1000).toFixed(1) + 'K Cr', sub: 'FY2025-26', color: 'var(--amber)', tip: 'Total insurance premium: \u20B9' + s.total_market_premium_cr.toFixed(0) + ' Cr' },
+    { label: 'LIFE PREMIUM', value: '\u20B9' + (s.life_premium_cr/1000).toFixed(1) + 'K Cr', sub: Math.round((s.life_premium_cr/s.total_market_premium_cr)*100) + '% share', color: 'var(--green)', tip: 'Life premium: \u20B9' + s.life_premium_cr.toFixed(0) + ' Cr' },
+    { label: 'NON-LIFE', value: '\u20B9' + (s.non_life_premium_cr/1000).toFixed(1) + 'K Cr', sub: Math.round((s.non_life_premium_cr/s.total_market_premium_cr)*100) + '% share', color: 'var(--cyan)', tip: 'Non-life premium: \u20B9' + s.non_life_premium_cr.toFixed(0) + ' Cr' },
+    { label: 'PENETRATION', value: s.insurance_penetration_pct + '%', sub: 'Global: ' + s.global_penetration_avg_pct + '%', color: 'var(--purple)', tip: 'Insurance penetration as % of GDP. Global avg: ' + s.global_penetration_avg_pct + '%' },
+    { label: 'DENSITY', value: '$' + s.insurance_density_usd, sub: 'Per capita', color: 'var(--orange)', tip: 'Premium per person per year in USD' },
+    { label: 'PLAYERS', value: getLifeLatest().insurers.length + getNonLifeLatest().insurers.length, sub: 'Monitored', color: 'var(--pink)', tip: getLifeLatest().insurers.length + ' life + ' + getNonLifeLatest().insurers.length + ' non-life insurers tracked' },
   ];
   document.getElementById('kpiStrip').innerHTML = kpis.map(function(k) {
-    return '<div class="kpi-item"><div class="kpi-label">' + k.label + '</div><div class="kpi-value" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-sub">' + k.sub + '</div></div>';
+    return '<div class="kpi-item" title="' + k.tip + '"><div class="kpi-label">' + k.label + '</div><div class="kpi-value" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-sub">' + k.sub + '</div></div>';
   }).join('');
 }
 
@@ -282,6 +294,16 @@ function setupNav() {
       toggleEMA();
     });
   }
+
+  // Period buttons
+  document.querySelectorAll('.period-btn').forEach(function(el) {
+    el.addEventListener('click', function() {
+      document.querySelectorAll('.period-btn').forEach(function(n) { n.style.borderColor = 'var(--border2)'; });
+      el.style.borderColor = 'var(--amber)';
+      chartPeriod = el.dataset.period;
+      updateChart();
+    });
+  });
 }
 
 function setupKeys() {
@@ -291,6 +313,9 @@ function setupKeys() {
     if (e.key === '3') { e.preventDefault(); switchView('nonlife'); }
     if (e.key === '4') { e.preventDefault(); switchView('compare'); }
     if (e.key === 'Escape') closePopup();
+    if (e.key === '?' || e.key === '/') { e.preventDefault(); showHelp(); }
+    if (e.key === 'f' || e.key === 'F') { e.preventDefault(); fitChart(); }
+    if (e.key === 'e' || e.key === 'E') { e.preventDefault(); toggleEMAByKey(); }
     if (e.key === 'r' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); refreshData(); }
   });
 }
@@ -335,6 +360,9 @@ function showHelp() {
       '<span style="color:var(--cyan)">4 / compare</span><span>Life vs Non-Life comparison</span>' +
       '<span style="color:var(--cyan)">search &lt;name&gt;</span><span>Filter table by company name</span>' +
       '<span style="color:var(--cyan)">export</span><span>Download table as CSV</span>' +
+      '<span style="color:var(--cyan)">F / fit</span><span>Reset chart zoom</span>' +
+      '<span style="color:var(--cyan)">E / ema</span><span>Toggle EMA overlay</span>' +
+      '<span style="color:var(--cyan)">? / help</span><span>Show this help</span>' +
       '<span style="color:var(--cyan)">Ctrl+R</span><span>Refresh data</span>' +
       '<span style="color:var(--cyan)">Esc</span><span>Close popup</span>' +
     '</div>' +
@@ -621,6 +649,13 @@ function updateChartData(segment) {
     if (r.width > 0 && r.height > 0) chart.resize(r.width, r.height);
   };
   window.addEventListener('resize', resizeHandler);
+
+  // Double-click to fullscreen
+  var chartPanel = document.querySelector('.chart-panel-body');
+  if (chartPanel && !chartPanel._fullscreenWired) {
+    chartPanel._fullscreenWired = true;
+    chartPanel.addEventListener('dblclick', function() { toggleFullscreenChart(); });
+  }
 }
 
 // ─── EMA ────────────────────────────────────────────────────────────
@@ -642,6 +677,17 @@ function calcEMA(data, period) {
   return result;
 }
 
+function toggleEMAByKey() {
+  showEMA = !showEMA;
+  var emaBtn = document.querySelector('[data-indicator="ema"]');
+  if (emaBtn) {
+    emaBtn.style.color = showEMA ? 'var(--bg)' : 'var(--amber)';
+    emaBtn.style.background = showEMA ? 'var(--amber)' : 'transparent';
+    emaBtn.style.borderColor = showEMA ? 'var(--amber)' : 'var(--amber-dim)';
+  }
+  toggleEMA();
+}
+
 function toggleEMA() {
   if (!chart) return;
   if (emaSeries) { chart.removeSeries(emaSeries); emaSeries = null; }
@@ -650,10 +696,13 @@ function toggleEMA() {
   // Rebuild data from current chartType
   var data;
   if (chartType === 'all' || chartType === 'overview') {
-    data = DATA.life.monthly_data.map(function(m, i) {
-      var non = DATA.non_life.monthly_data[i] || DATA.non_life.monthly_data[DATA.non_life.monthly_data.length - 1];
+    var nonLifeByMonth = {};
+    DATA.non_life.monthly_data.forEach(function(m) { nonLifeByMonth[m.month] = m; });
+    data = DATA.life.monthly_data.map(function(m) {
+      var non = nonLifeByMonth[m.month];
+      if (!non) return null;
       return { time: m.month, value: m.total_premium_cr + non.total_premium_cr };
-    });
+    }).filter(function(d) { return d !== null; });
   } else if (chartType === 'life') {
     data = DATA.life.monthly_data.map(function(m) { return { time: m.month, value: m.total_premium_cr }; });
   } else if (chartType === 'nonlife') {
@@ -675,6 +724,13 @@ function toggleEMA() {
   emaSeries.setData(emaData);
 }
 
+function applyPeriod(data) {
+  if (chartPeriod === 'all' || !data || !data.length) return data;
+  var months = { '1m': 1, '3m': 3, '6m': 6 }[chartPeriod] || 0;
+  if (months <= 0) return data;
+  return data.slice(-months);
+}
+
 function updateChart() {
   if (!chart) return;
   // Remove all existing series
@@ -683,10 +739,22 @@ function updateChart() {
 
   var data, color;
   if (chartType === 'all' || chartType === 'overview') {
-    data = DATA.life.monthly_data.map(function(m, i) {
-      var non = DATA.non_life.monthly_data[i] || DATA.non_life.monthly_data[DATA.non_life.monthly_data.length - 1];
+    // Match by month string, not by index (life and non-life may have different months)
+    var nonLifeByMonth = {};
+    DATA.non_life.monthly_data.forEach(function(m) { nonLifeByMonth[m.month] = m; });
+    data = DATA.life.monthly_data.map(function(m) {
+      var non = nonLifeByMonth[m.month];
+      if (!non) return null;
       return { time: m.month, value: m.total_premium_cr + non.total_premium_cr };
-    });
+    }).filter(function(d) { return d !== null; });
+    // If no aligned months, fall back to combining all unique months
+    if (!data.length) {
+      var allMonths = {};
+      DATA.life.monthly_data.concat(DATA.non_life.monthly_data).forEach(function(m) {
+        allMonths[m.month] = (allMonths[m.month] || 0) + m.total_premium_cr;
+      });
+      data = Object.keys(allMonths).sort().map(function(t) { return { time: t, value: allMonths[t] }; });
+    }
     color = '#ff9900';
   } else if (chartType === 'life') {
     data = DATA.life.monthly_data.map(function(m) { return { time: m.month, value: m.total_premium_cr }; });
@@ -699,6 +767,8 @@ function updateChart() {
     var lifeData = DATA.life.monthly_data;
     var nonData = DATA.non_life.monthly_data;
 
+    var lifePoints = lifeData.map(function(m) { return { time: m.month, value: m.total_premium_cr }; });
+    lifePoints = applyPeriod(lifePoints);
     var lifeSeries = chart.addAreaSeries({
       lineColor: '#00cc44',
       topColor: '#00cc4420',
@@ -707,9 +777,11 @@ function updateChart() {
       lastValueVisible: true,
       priceFormat: { type: 'volume' },
     });
-    lifeSeries.setData(lifeData.map(function(m) { return { time: m.month, value: m.total_premium_cr }; }));
+    lifeSeries.setData(lifePoints);
     chartSeries.push(lifeSeries);
 
+    var nonPoints = nonData.map(function(m) { return { time: m.month, value: m.total_premium_cr }; });
+    nonPoints = applyPeriod(nonPoints);
     var nonSeries = chart.addAreaSeries({
       lineColor: '#00ccff',
       topColor: '#00ccff20',
@@ -718,13 +790,14 @@ function updateChart() {
       lastValueVisible: true,
       priceFormat: { type: 'volume' },
     });
-    nonSeries.setData(nonData.map(function(m) { return { time: m.month, value: m.total_premium_cr }; }));
+    nonSeries.setData(nonPoints);
     chartSeries.push(nonSeries);
 
     chart.timeScale().fitContent();
     return;
   }
 
+  data = applyPeriod(data);
   var series = chart.addAreaSeries({
     lineColor: color,
     topColor: color + '20',

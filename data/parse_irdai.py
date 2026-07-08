@@ -207,6 +207,11 @@ def parse_non_life_excel(filepath, filename):
         for insurer in insurers:
             insurer['market_share_pct'] = round((insurer['premium_cr'] / total_premium_cr) * 100, 2)
     
+    # Calculate total growth as weighted average of individual growth rates
+    if total_premium_cr > 0 and insurers:
+        total_growth = sum(i['premium_cr'] * i['yoy_growth_pct'] for i in insurers)
+        total_growth_pct = total_growth / total_premium_cr
+    
     wb.close()
     
     return {

@@ -712,6 +712,20 @@ body::after {
 .bar-fill.up { background: var(--green); }
 .bar-fill.dn { background: var(--red); }
 
+/* ─── FULLSCREEN ───────────────────────────────────────── */
+.chart-panel-body.fullscreen {
+  position: fixed;
+  inset: 28px 0 26px 0;
+  z-index: 100;
+  background: var(--bg);
+  padding: 12px;
+  border: 1px solid var(--amber-dim);
+}
+.chart-panel-body.fullscreen .chart-area {
+  min-height: 200px;
+  flex: 1;
+}
+
 /* ─── RESPONSIVE ───────────────────────────────────────── */
 @media (max-width: 800px) {
   .main-grid { grid-template-columns: 1fr; grid-template-rows: auto 1fr 1fr; }
