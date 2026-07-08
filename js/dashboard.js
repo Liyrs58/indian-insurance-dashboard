@@ -582,9 +582,11 @@ function setupNav() {
 
 function setupKeys() {
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closePopup();
-    if (e.key === '?' || e.key === '/') { e.preventDefault(); showHelp(); }
-    if (e.key === 'r' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); refreshData(); }
+    if (e.key === 'Escape') { closePopup(); return; }
+    if (e.key === 'r' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); refreshData(); return; }
+    var tag = e.target && e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (e.key === '?' || e.key === '/') { e.preventDefault(); showHelp(); return; }
     if (e.key.length !== 1) return;
     if (e.key === '1') { e.preventDefault(); switchView('overview'); }
     else if (e.key === '2') { e.preventDefault(); switchView('life'); }
