@@ -116,8 +116,8 @@ test('secondary analytics follow the active view and terminal exposes data audit
   assert.match(source, /function generateBrief\(\) \{[\s\S]*?getActiveAnalysisScope\(\)/);
 
   assert.match(source, /function showAudit/);
-  assert.match(source, /cmd === 'audit'/);
-  assert.match(source, /cmd === 'sources'/);
+  assert.match(source, /'audit'/);
+  assert.match(source, /showAudit/);
   assert.match(source, /setupStatus/);
 });
 

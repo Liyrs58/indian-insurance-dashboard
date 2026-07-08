@@ -384,7 +384,7 @@ function init() {
   setInterval(refreshData, 300000);
   setupNav();
   setupKeys();
-  setupCmd();
+  setupChat();
   setupStatus();
 }
 
@@ -431,8 +431,7 @@ function exportCSV() {
   a.download = 'irdai-' + currentView + '-' + new Date().toISOString().slice(0, 10) + '.csv';
   a.click();
   URL.revokeObjectURL(a.href);
-  document.getElementById('cmdStatus').textContent = 'Exported ' + rows.length + ' rows';
-  setTimeout(function() { updateCmdStatus(); }, 3000);
+  chatSay('Exported <strong>' + rows.length + '</strong> rows as CSV.', false);
 }
 
 // ─── Ticker ─────────────────────────────────────────────────────────
@@ -613,47 +612,317 @@ function switchView(view) {
   renderView(view);
 }
 
-// ─── Command Bar ────────────────────────────────────────────────────
-function setupCmd() {
-  var input = document.getElementById('cmdInput');
+// ─── Chat Assistant ──────────────────────────────────────────────────
+var CHAT_HISTORY = [];
+
+function chatSay(text, isUser) {
+  if (isUser && !text) return;
+  CHAT_HISTORY.push({ text: text, isUser: !!isUser });
+  var el = document.getElementById('chatMessages');
+  if (!el) return;
+  var div = document.createElement('div');
+  div.className = 'chat-msg ' + (isUser ? 'user' : 'bot');
+  var bubble = document.createElement('div');
+  bubble.className = 'chat-bubble';
+  bubble.innerHTML = text;
+  div.appendChild(bubble);
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function chatStatus(text) {
+  var el = document.getElementById('chatStatus');
+  if (el) el.textContent = text || '';
+}
+
+function clearChat() {
+  var el = document.getElementById('chatMessages');
+  if (!el) return;
+  el.innerHTML = '<div class="chat-msg bot"><div class="chat-bubble">Chat cleared. Ask me anything!</div></div>';
+  CHAT_HISTORY = [];
+  chatStatus('');
+}
+
+function setupChat() {
+  var input = document.getElementById('chatInput');
+  var sendBtn = document.getElementById('chatSend');
+  var clearBtn = document.getElementById('chatClear');
+
+  function submit() {
+    var raw = input.value.trim();
+    if (!raw) return;
+    input.value = '';
+    chatSay(escapeHtml(raw), true);
+    processChatInput(raw);
+  }
+
   input.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-      var raw = input.value.trim();
-      var cmd = raw.toLowerCase();
-      input.value = '';
-      if (cmd === 'help' || cmd === '?') showHelp();
-      else if (cmd === 'overview' || cmd === '1') switchView('overview');
-      else if (cmd === 'life' || cmd === '2') switchView('life');
-      else if (cmd === 'nonlife' || cmd === '3') switchView('nonlife');
-      else if (cmd === 'compare' || cmd === '4') switchView('compare');
-      else if (cmd === 'export') { exportCSV(); }
-      else if (cmd === 'splash' || cmd === 'i') { showSplash(); }
-      else if (cmd === 'audit' || cmd === 'sources') { showAudit(); }
-      else if (cmd.indexOf('compare ') === 0) {
-        var rest = raw.slice(8).trim();
-        var parts = rest.indexOf(' vs ') !== -1 ? rest.split(' vs ') : (rest.indexOf(',') !== -1 ? rest.split(',') : rest.split(/\s+/, 2));
-        if (parts.length < 2 || !parts[1]) {
-          document.getElementById('cmdStatus').textContent = 'Usage: compare <name1> vs <name2> or compare <name1>,<name2>';
-          setTimeout(updateCmdStatus, 3000);
-          return;
-        }
-        startCompanyComparison(parts[0].trim(), parts[1].trim());
-      }
-      else if (cmd === 'exit' || cmd === 'clear') {
-        if (comparisonMode) { exitCompanyComparison(); }
-        else if (table) { table.clearFilter(true); updateCmdStatus(); }
-      }
-      else if (cmd === 'export pdf' || cmd === 'print') {
-        window.print();
-      }
-      else if (cmd.indexOf('search ') === 0) {
-        applySearchFilter(raw.slice(raw.indexOf(' ') + 1));
-      } else {
-        document.getElementById('cmdStatus').textContent = 'Unknown: ' + cmd;
-        setTimeout(function() { updateCmdStatus(); }, 2000);
+    if (e.key === 'Enter') submit();
+  });
+  sendBtn.addEventListener('click', submit);
+  if (clearBtn) clearBtn.addEventListener('click', clearChat);
+}
+
+function processChatInput(raw) {
+  var text = raw.trim();
+  var lower = text.toLowerCase();
+
+  if (lower === 'help' || lower === '?' || lower === 'what can you do' || lower === 'what can you do?') {
+    showChatHelp(); return;
+  }
+  if (lower === 'exit' || lower === 'clear' || lower === 'go back' || lower === 'stop') {
+    if (comparisonMode) { exitCompanyComparison(); chatSay('Comparison cleared. Showing normal view.', false); }
+    else if (table) { table.clearFilter(true); chatSay('Table filter cleared.', false); }
+    else chatSay('Nothing to clear.', false);
+    return;
+  }
+  if (lower === 'overview' || lower === 'show overview' || lower === 'go to overview' || lower === 'home' || lower === 'main') {
+    switchView('overview'); chatSay('Switched to <strong>Market Overview</strong>.', false); return;
+  }
+  if (lower === 'life' || lower === 'show life' || lower === 'life insurance' || lower === 'go to life') {
+    switchView('life'); chatSay('Switched to <strong>Life Insurance</strong> view.', false); return;
+  }
+  if (lower === 'nonlife' || lower === 'non-life' || lower === 'non life' || lower === 'show non life' || lower === 'general insurance') {
+    switchView('nonlife'); chatSay('Switched to <strong>Non-Life Insurance</strong> view.', false); return;
+  }
+  if (lower === 'compare' || lower === 'show compare' || lower === 'life vs nonlife' || lower === 'segment compare') {
+    switchView('compare'); chatSay('Switched to <strong>Life vs Non-Life</strong> segment comparison.', false); return;
+  }
+
+  if (lower === 'export' || lower === 'download' || lower === 'csv' || lower === 'export csv') {
+    try { exportCSV(); chatSay('CSV exported! Check your downloads.', false); } catch(e) { chatSay('Could not export CSV. Make sure a table is visible.', false); }
+    return;
+  }
+  if (lower === 'export pdf' || lower === 'print' || lower === 'pdf') {
+    chatSay('Opening print dialog... Save as PDF from there.', false);
+    setTimeout(function() { window.print(); }, 300);
+    return;
+  }
+  if (lower === 'audit' || lower === 'sources' || lower === 'data audit' || lower === 'data quality') {
+    showAudit(); return;
+  }
+  if (lower === 'splash' || lower === 'market overview' || lower === 'summary') {
+    showSplash(); return;
+  }
+  if (lower === 'fit' || lower === 'reset chart' || lower === 'fit chart') {
+    fitChart(); chatSay('Chart zoom reset.', false); return;
+  }
+  if (lower === 'ema' || lower === 'toggle ema' || lower === 'show ema') {
+    toggleEMAByKey(); chatSay('EMA toggled.', false); return;
+  }
+  if (lower === 'refresh' || lower === 'reload') {
+    refreshData(); chatSay('Refreshing data...', false); return;
+  }
+
+  var compareMatch = lower.match(/compare\s+(.+?)\s+(?:vs|versus|and|,)\s+(.+)/);
+  if (compareMatch) {
+    startCompanyComparison(compareMatch[1].trim(), compareMatch[2].trim());
+    return;
+  }
+
+  var searchMatch = lower.match(/(?:search|find|filter|look up|show)\s+(.+)/);
+  if (searchMatch && !searchMatch[1].match(/^(?:overview|life|non.?life|compare|help|export|audit|splash)$/)) {
+    var q = searchMatch[1].trim();
+    applySearchFilter(q);
+    chatSay('Table filtered for <strong>' + escapeHtml(q) + '</strong>. Type <strong>clear</strong> to reset.', false);
+    return;
+  }
+
+  var whoMatch = lower.match(/(?:who is|tell me about|about|what is|show me)\s+(.+)/);
+  if (whoMatch) {
+    showChatCompanyProfile(whoMatch[1].trim()); return;
+  }
+
+  var topMatch = lower.match(/(?:top|largest|biggest|leading|best)\s+(\d+)?\s*(life|non.?life|insurer|company|player|general)?/i);
+  if (topMatch || lower.indexOf('top') !== -1 || lower.indexOf('largest') !== -1) {
+    showChatTopCompanies(lower); return;
+  }
+
+  if (lower.indexOf('total') !== -1 || lower.indexOf('market') !== -1 || lower === 'size' || lower === 'market size') {
+    showChatMarketOverview(); return;
+  }
+  if (lower.indexOf('penetration') !== -1 || lower.indexOf('density') !== -1 || lower.indexOf('gap') !== -1) {
+    showChatPenetration(); return;
+  }
+  if (lower.indexOf('growth') !== -1 || lower.indexOf('yoy') !== -1) {
+    var company = lower.replace(/(?:growth|yoy|performance)\s*(?:of|for|rate)?\s*/i, '').trim();
+    if (company && company.length > 2) { showChatCompanyProfile(company); return; }
+    showChatMarketOverview(); return;
+  }
+  if (lower.indexOf('share') !== -1 || lower.indexOf('market share') !== -1) {
+    var company = lower.replace(/(?:market )?share\s*(?:of|for)?\s*/i, '').trim();
+    if (company && company.length > 2) { showChatCompanyProfile(company); return; }
+    showChatMarketOverview(); return;
+  }
+  if (lower.indexOf('stock') !== -1 || lower.indexOf('nse') !== -1 || lower.indexOf('price') !== -1 || lower.indexOf('share price') !== -1 || lower.indexOf('ticker') !== -1) {
+    handleChatStockQuery(lower); return;
+  }
+  if (lower.indexOf('hhi') !== -1 || lower.indexOf('concentration') !== -1 || lower.indexOf('herfindahl') !== -1) {
+    activatePanelTab(document.querySelector('.panel-left'), 'hhi');
+    chatSay('Showing <strong>Concentration (HHI)</strong> tab in the left panel.', false); return;
+  }
+  if (lower.indexOf('mover') !== -1 || lower.indexOf('growing') !== -1 || lower.indexOf('shrink') !== -1 || lower.indexOf('fastest') !== -1) {
+    activatePanelTab(document.querySelector('.panel-left'), 'movers');
+    chatSay('Showing <strong>Movers</strong> tab in the left panel.', false); return;
+  }
+  if (lower.indexOf('player') !== -1 || lower.indexOf('top companies') !== -1) {
+    resetPanelTabs();
+    var playerTab = document.querySelector('[data-panel="players"]');
+    if (playerTab) { playerTab.click(); chatSay('Showing <strong>Top Players</strong> tab.', false); }
+    return;
+  }
+  if (lower === 'hello' || lower === 'hi' || lower === 'hey' || lower === 'namaste') {
+    chatSay('Hello! I can help you explore the Indian insurance market. Try asking about a specific company or type <strong>help</strong>.', false); return;
+  }
+
+  var resolved = resolveCompanyName(text);
+  if (resolved) { showChatCompanyProfile(resolved.name); return; }
+
+  chatSay('I\'m not sure I understand. Ask me something like <strong>"Who is the top life insurer?"</strong>, <strong>"Compare LIC and HDFC Life"</strong>, or type <strong>help</strong> to see what I can do.', false);
+}
+
+function showChatHelp() {
+  chatSay(
+    'Here\'s what I can help you with:<br><br>' +
+    '<strong>Companies</strong> — "Tell me about LIC", "What is ICICI Lombard?", "Show me SBI Life"<br>' +
+    '<strong>Compare</strong> — "Compare LIC vs HDFC Life", "Compare ICICI Lombard, New India"<br>' +
+    '<strong>Market</strong> — "What\'s the total market premium?", "Show me penetration", "Market size"<br>' +
+    '<strong>Top lists</strong> — "Who are the top life insurers?", "Largest non-life companies"<br>' +
+    '<strong>Views</strong> — "Show overview", "Go to life", "Non-life view", "Compare segments"<br>' +
+    '<strong>Data</strong> — "Export", "Export PDF", "Refresh", "Audit"<br>' +
+    '<strong>Search</strong> — "Find Star Health", "Search ICICI"<br>' +
+    '<strong>Stocks</strong> — "What\'s the NSE price of LIC?", "Stock of ICICI Prudential"<br>' +
+    '<strong>Exit</strong> — "Exit comparison", "Clear search"', false);
+}
+
+function showChatCompanyProfile(query) {
+  var resolved = resolveCompanyName(query);
+  if (!resolved) { chatSay('I couldn\'t find <strong>' + escapeHtml(query) + '</strong>. Try a different name or search the table.', false); return; }
+  var data = null;
+  var seg = null;
+  var scope1 = getScopeForCompany(resolved.name);
+  if (scope1.segment) {
+    var m = getMonthData(scope1.segment, null);
+    if (m) {
+      for (var i = 0; i < m.insurers.length; i++) {
+        if (m.insurers[i].name === resolved.name) { data = m.insurers[i]; seg = scope1.segment; break; }
       }
     }
-  });
+  }
+  var scope2 = { segment: seg === 'life' ? 'non_life' : 'life' };
+  if (!data) {
+    scope2.segment = 'non_life';
+    var m2 = getMonthData('non_life', null);
+    if (m2) {
+      for (var i = 0; i < m2.insurers.length; i++) {
+        if (m2.insurers[i].name === resolved.name) { data = m2.insurers[i]; seg = 'non_life'; break; }
+      }
+    }
+  }
+  var profile = resolved.profile || lookupCompany(resolved.name);
+  var color = seg === 'life' ? 'var(--green)' : 'var(--cyan)';
+  var segLabel = seg === 'life' ? 'Life' : 'Non-Life';
+  var html = '<strong style="color:' + color + '">' + shortName(resolved.name) + '</strong><br>';
+  if (profile && profile.segment) html += '<span class="c-gry">Segment:</span> ' + profile.segment + '<br>';
+  if (profile && profile.founded) html += '<span class="c-gry">Founded:</span> ' + profile.founded + '<br>';
+  if (profile && profile.rating) html += '<span class="c-gry">Rating:</span> ' + profile.rating + '<br>';
+  if (profile && profile.specialties) html += '<span class="c-gry">Specialties:</span> ' + profile.specialties + '<br>';
+  if (profile && profile.group) html += '<span class="c-gry">Group:</span> ' + profile.group + '<br>';
+  if (data) {
+    html += '<br><strong class="c-amb">Latest Data</strong><br>';
+    html += '<span class="c-gry">Premium:</span> ' + fmtCr(data.premium_cr) + '<br>';
+    html += '<span class="c-gry">Market Share:</span> ' + (data.market_share_pct != null ? data.market_share_pct.toFixed(1) + '%' : '--') + '<br>';
+    html += '<span class="c-gry">YoY Growth:</span> <span class="' + (data.yoy_growth_pct >= 0 ? 'c-grn' : 'c-red') + '">' + fmtPct(data.yoy_growth_pct) + '</span><br>';
+  }
+  if (profile && profile.ticker) {
+    var sp = getStockPrice(profile.ticker);
+    if (sp && sp.price) html += '<br><span class="c-gry">NSE (' + profile.ticker.replace('.NS','') + '):</span> <strong class="c-amb">₹' + sp.price.toFixed(2) + '</strong>';
+  }
+  if (profile && profile.desc) html += '<br><br><span class="c-gry">' + profile.desc + '</span>';
+  chatSay(html, false);
+}
+
+function showChatTopCompanies(lower) {
+  var seg = lower.indexOf('non') !== -1 || lower.indexOf('general') !== -1 ? 'non_life' : (lower.indexOf('life') !== -1 ? 'life' : null);
+  var count = 5;
+  var countMatch = lower.match(/(\d+)/);
+  if (countMatch) count = Math.min(parseInt(countMatch[1]), 15);
+  if (seg === 'life' || seg === 'non_life') {
+    var m = getMonthData(seg, null);
+    if (!m) { chatSay('No data available for this segment.', false); return; }
+    var sorted = sortByPremium(m.insurers).slice(0, count);
+    var label = seg === 'life' ? 'Life Insurance' : 'Non-Life Insurance';
+    var color = seg === 'life' ? 'c-grn' : 'c-cyn';
+    var html = '<strong class="' + color + '">Top ' + count + ' ' + label + ' Insurers</strong><br>';
+    sorted.forEach(function(i, idx) {
+      html += (idx + 1) + '. <strong>' + shortName(i.name) + '</strong> — ' + fmtCr(i.premium_cr) + ' (' + i.market_share_pct.toFixed(1) + '% share, <span class="' + (i.yoy_growth_pct >= 0 ? 'c-grn' : 'c-red') + '">' + fmtPct(i.yoy_growth_pct) + '</span>)<br>';
+    });
+    chatSay(html, false);
+  } else {
+    var pair = getSharedMonthPair(selectedMonth);
+    if (!pair.life || !pair.nonlife) { chatSay('No market data available.', false); return; }
+    var all = [];
+    pair.life.insurers.forEach(function(i) { all.push({ name: i.name, premium: i.premium_cr, share: i.market_share_pct, growth: i.yoy_growth_pct, seg: 'Life', color: 'c-grn' }); });
+    pair.nonlife.insurers.forEach(function(i) { all.push({ name: i.name, premium: i.premium_cr, share: i.market_share_pct, growth: i.yoy_growth_pct, seg: 'Non-Life', color: 'c-cyn' }); });
+    all.sort(function(a, b) { return b.premium - a.premium; });
+    var top = all.slice(0, count);
+    var html = '<strong class="c-amb">Top ' + count + ' Insurers (All Segments)</strong><br>';
+    top.forEach(function(i, idx) {
+      html += (idx + 1) + '. <strong>' + shortName(i.name) + '</strong> <span class="' + i.color + '">' + i.seg + '</span> — ' + fmtCr(i.premium) + ' (' + i.share.toFixed(1) + '%)<br>';
+    });
+    chatSay(html, false);
+  }
+}
+
+function showChatMarketOverview() {
+  var s = DATA ? DATA.summary : null;
+  if (!s) { chatSay('Market data not loaded yet.', false); return; }
+  var pair = getSharedMonthPair(DATA._meta ? DATA._meta.latest_shared_month : null);
+  var month = (pair && pair.month) || 'latest';
+  chatSay(
+    '<strong class="c-amb">Indian Insurance Market (' + month + ')</strong><br>' +
+    '<span class="c-gry">Total Market:</span> ₹' + (s.total_market_premium_cr/1000).toFixed(1) + 'K Cr<br>' +
+    '<span class="c-grn">Life:</span> ₹' + (s.life_premium_cr/1000).toFixed(1) + 'K Cr (' + Math.round(s.life_premium_cr/s.total_market_premium_cr*100) + '% share)<br>' +
+    '<span class="c-cyn">Non-Life:</span> ₹' + (s.non_life_premium_cr/1000).toFixed(1) + 'K Cr (' + Math.round(s.non_life_premium_cr/s.total_market_premium_cr*100) + '% share)<br>' +
+    '<span class="c-gry">Penetration:</span> ' + s.insurance_penetration_pct + '% of GDP (Global avg: ' + s.global_penetration_avg_pct + '%)<br>' +
+    '<span class="c-gry">Density:</span> $' + s.insurance_density_usd + '/capita<br>' +
+    '<span class="c-gry">Players Tracked:</span> ' + (s.life_insurer_count + s.non_life_insurer_count) + ' insurers', false);
+}
+
+function showChatPenetration() {
+  var s = DATA ? DATA.summary : null;
+  if (!s) { chatSay('Data not loaded yet.', false); return; }
+  var gap = (s.global_penetration_avg_pct - s.insurance_penetration_pct).toFixed(1);
+  chatSay(
+    '<strong class="c-amb">Insurance Penetration & Density</strong><br>' +
+    '<span class="c-gry">India Penetration:</span> ' + s.insurance_penetration_pct + '% of GDP<br>' +
+    '<span class="c-gry">Global Average:</span> ' + s.global_penetration_avg_pct + '%<br>' +
+    '<span class="c-gry">Gap:</span> ' + gap + 'pp below global<br>' +
+    '<span class="c-gry">Density:</span> $' + s.insurance_density_usd + ' per capita<br>' +
+    '<span class="c-gry">Opportunity:</span> India needs ~' + (gap * 2).toFixed(0) + 'x current penetration to match peers', false);
+}
+
+function handleChatStockQuery(lower) {
+  var company = lower.replace(/(?:stock|nse|price|share price|ticker|of)\s*/gi, '').trim();
+  if (!company || company.length < 2) {
+    // Show all stock tickers
+    if (!STOCKS || !STOCKS.prices) { chatSay('Stock data not available.', false); return; }
+    var tickers = Object.keys(STOCKS.prices);
+    if (!tickers.length) { chatSay('No stock data loaded.', false); return; }
+    var html = '<strong class="c-amb">NSE Stock Prices</strong><br>';
+    tickers.forEach(function(t) {
+      html += '<span class="c-gry">' + t.replace('.NS','') + ':</span> ₹' + (STOCKS.prices[t] && STOCKS.prices[t].price ? STOCKS.prices[t].price.toFixed(2) : '--') + '<br>';
+    });
+    chatSay(html, false);
+    return;
+  }
+  var resolved = resolveCompanyName(company);
+  if (!resolved) { chatSay('I couldn\'t find that company.', false); return; }
+  var profile = resolved.profile || lookupCompany(resolved.name);
+  if (!profile || !profile.ticker) { chatSay(shortName(resolved.name) + ' is not listed on NSE (no ticker data).', false); return; }
+  var sp = getStockPrice(profile.ticker);
+  if (!sp || !sp.price) { chatSay(shortName(resolved.name) + ' (' + profile.ticker.replace('.NS','') + '): No recent price data available.', false); return; }
+  chatSay('<strong>' + shortName(resolved.name) + '</strong> — <strong class="c-amb">₹' + sp.price.toFixed(2) + '</strong> on ' + sp.exchange + '<br><span class="c-gry">Ticker:</span> ' + profile.ticker.replace('.NS',''), false);
 }
 
 function applySearchFilter(query) {
@@ -661,7 +930,6 @@ function applySearchFilter(query) {
   var q = (query || '').trim().toLowerCase();
   if (!q) {
     table.clearFilter(true);
-    updateCmdStatus();
     return;
   }
   var aliases = {
@@ -679,32 +947,15 @@ function applySearchFilter(query) {
     var seg = (data.seg || data._seg || '').toLowerCase();
     return name.indexOf(q) !== -1 || name.indexOf(expanded) !== -1 || seg.indexOf(q) !== -1;
   });
-  var activeRows = table.getData('active').length;
-  document.getElementById('cmdStatus').textContent = 'Search "' + query + '" · ' + activeRows + ' rows';
 }
 
-function showHelp() {
-  showPopup('IRDAI COMMANDS',
-    '<div style="display:grid;grid-template-columns:80px 1fr;gap:4px 10px;font-size:9px;">' +
-      '<span style="color:var(--cyan)">1 / overview</span><span>Market overview</span>' +
-      '<span style="color:var(--cyan)">2 / life</span><span>Life insurance view</span>' +
-      '<span style="color:var(--cyan)">3 / nonlife</span><span>Non-life insurance view</span>' +
-      '<span style="color:var(--cyan)">4 / compare</span><span>Life vs Non-Life comparison</span>' +
-      '<span style="color:var(--cyan)">search &lt;name&gt;</span><span>Filter table by company name</span>' +
-      '<span style="color:var(--cyan)">audit / sources</span><span>Open data quality and source audit</span>' +
-      '<span style="color:var(--cyan)">export</span><span>Download table as CSV</span>' +
-      '<span style="color:var(--cyan)">export pdf / print</span><span>Export dashboard as PDF</span>' +
-      '<span style="color:var(--cyan)">compare &lt;a&gt; vs &lt;b&gt;</span><span>Compare two companies</span>' +
-      '<span style="color:var(--cyan)">exit</span><span>Exit comparison / clear search</span>' +
-      '<span style="color:var(--cyan)">F / fit</span><span>Reset chart zoom</span>' +
-      '<span style="color:var(--cyan)">E / ema</span><span>Toggle EMA overlay</span>' +
-      '<span style="color:var(--cyan)">I / splash</span><span>IRDAI market overview splash</span>' +
-      '<span style="color:var(--cyan)">? / help</span><span>Show this help</span>' +
-      '<span style="color:var(--cyan)">Ctrl+R</span><span>Refresh data</span>' +
-      '<span style="color:var(--cyan)">Esc</span><span>Close popup</span>' +
-    '</div>' +
-    '<div style="margin-top:8px;color:var(--gray);font-size:8px;">IRDAI · Indian Insurance Market Terminal v1.0</div>'
-  );
+function updateCmdStatus() {
+  if (!DATA) return;
+  var life = getLifeLatest();
+  var nonlife = getNonLifeLatest();
+  if (!life || !nonlife) return;
+  var status = DATA._meta && DATA._meta.validation ? DATA._meta.validation.status.toUpperCase() : 'UNVALIDATED';
+  chatStatus(life.insurers.length + ' life + ' + nonlife.insurers.length + ' non-life · ' + status);
 }
 
 function setupStatus() {
@@ -743,15 +994,6 @@ function refreshData() {
   }).catch(function() {
     updateDataStatus('error');
   });
-}
-
-function updateCmdStatus() {
-  if (!DATA) return;
-  var life = getLifeLatest();
-  var nonlife = getNonLifeLatest();
-  if (!life || !nonlife) return;
-  var status = DATA._meta && DATA._meta.validation ? DATA._meta.validation.status.toUpperCase() : 'UNVALIDATED';
-  document.getElementById('cmdStatus').textContent = life.insurers.length + ' life + ' + nonlife.insurers.length + ' non-life insurers · shared ' + ((DATA._meta && DATA._meta.latest_shared_month) || '--') + ' · ' + status;
 }
 
 function updateDataStatus(state) {
@@ -1282,8 +1524,7 @@ function toggleEMA() {
 
   if (data.length < minPoints) {
     showEMA = false;
-    document.getElementById('cmdStatus').textContent = 'Need >= ' + minPoints + ' periods for EMA';
-    setTimeout(function() { updateCmdStatus(); }, 3000);
+    chatSay('Need at least <strong>' + minPoints + '</strong> data periods for EMA calculation.', false);
     return;
   }
   var emaData = calcEMA(data, 3);
@@ -1304,8 +1545,7 @@ function applyPeriod(data) {
   var months = { '1m': 1, '3m': 3, '6m': 6 }[chartPeriod] || 0;
   if (months <= 0) return data;
   if (data.length < months) {
-    document.getElementById('cmdStatus').textContent = 'Only ' + data.length + ' months available, showing all';
-    setTimeout(function() { updateCmdStatus(); }, 3000);
+    chatSay('Only <strong>' + data.length + '</strong> months available for this period. Showing all.', false);
     return data;
   }
   return data.slice(-months);
@@ -1784,13 +2024,13 @@ function getScopeForCompany(name) {
 function startCompanyComparison(input1, input2) {
   var r1 = resolveCompanyName(input1);
   var r2 = resolveCompanyName(input2);
-  if (!r1) { document.getElementById('cmdStatus').textContent = 'Company not found: ' + input1; setTimeout(updateCmdStatus, 3000); return; }
-  if (!r2) { document.getElementById('cmdStatus').textContent = 'Company not found: ' + input2; setTimeout(updateCmdStatus, 3000); return; }
-  if (r1.name === r2.name) { document.getElementById('cmdStatus').textContent = 'Cannot compare a company with itself'; setTimeout(updateCmdStatus, 3000); return; }
+  if (!r1) { chatSay('Company not found: <strong>' + escapeHtml(input1) + '</strong>. Try a different name.', false); return; }
+  if (!r2) { chatSay('Company not found: <strong>' + escapeHtml(input2) + '</strong>. Try a different name.', false); return; }
+  if (r1.name === r2.name) { chatSay('You can\'t compare a company with itself!', false); return; }
 
   comparisonMode = 'company';
   comparisonCompanies = [r1, r2];
-  document.getElementById('cmdStatus').textContent = 'Comparing: ' + shortName(r1.name) + ' vs ' + shortName(r2.name) + '. Type "exit" to clear.';
+  chatSay('Comparing <strong>' + shortName(r1.name) + '</strong> vs <strong>' + shortName(r2.name) + '</strong>. Check the table and chart! Type <strong>exit</strong> to leave comparison mode.', false);
 
   if (table) { table.destroy(); table = null; }
   if (emaSeries && chart) { chart.removeSeries(emaSeries); emaSeries = null; }

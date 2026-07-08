@@ -114,11 +114,23 @@
 
   </div>
 
-  <!-- ═══ COMMAND BAR ═══ -->
-  <div class="command-bar">
-    <span class="cmd-prompt">IRDAI&gt;</span>
-    <input class="cmd-input" id="cmdInput" placeholder="Type help for commands..." spellcheck="false">
-    <span class="cmd-status" id="cmdStatus">60 insurers tracked</span>
+  <!-- ═══ CHAT ASSISTANT ═══ -->
+  <div class="chat-bar" id="chatBar">
+    <div class="chat-header" id="chatHeader">
+      <span class="chat-header-icon">◆</span>
+      <span class="chat-header-title">IRDAI ASSISTANT</span>
+      <span class="chat-header-status" id="chatStatus"></span>
+      <button class="chat-clear" id="chatClear" title="Clear chat">✕</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-msg bot">
+        <div class="chat-bubble">Hello! I'm your IRDAI assistant. Ask me about any insurer, compare companies, or type <strong>help</strong> to see what I can do.</div>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" placeholder="Ask me anything about insurance data..." spellcheck="false" autofocus>
+      <button class="chat-send" id="chatSend">Send</button>
+    </div>
   </div>
 
 </div>
