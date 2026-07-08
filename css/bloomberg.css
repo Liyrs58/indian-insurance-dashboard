@@ -1,0 +1,267 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'JetBrains Mono', monospace;
+  background: #0a0a0a;
+  color: #c8c8c8;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 12px;
+}
+
+/* Top status bar */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  background: #111;
+  border: 1px solid #222;
+  margin-bottom: 12px;
+  font-size: 11px;
+}
+
+.status-bar .title {
+  color: #00ff41;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.status-bar .title span {
+  color: #555;
+  font-weight: 300;
+}
+
+.status-bar .time {
+  color: #666;
+}
+
+.status-bar .ticker {
+  color: #ffb000;
+}
+
+/* Grid layout */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* Panel styling */
+.panel {
+  background: #111;
+  border: 1px solid #222;
+  padding: 10px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #1a1a1a;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #555;
+}
+
+.panel-header .label {
+  color: #888;
+}
+
+.panel-header .badge {
+  color: #00ff41;
+  font-size: 9px;
+}
+
+/* KPI cards */
+.kpi-card {
+  background: #0d0d0d;
+  border: 1px solid #1a1a1a;
+  padding: 10px;
+  text-align: center;
+}
+
+.kpi-value {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.kpi-value.green { color: #00ff41; }
+.kpi-value.amber { color: #ffb000; }
+.kpi-value.cyan { color: #40e0d0; }
+.kpi-value.red { color: #ff6b6b; }
+.kpi-value.purple { color: #a29bfe; }
+
+.kpi-label {
+  font-size: 9px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kpi-sub {
+  font-size: 9px;
+  color: #444;
+  margin-top: 2px;
+}
+
+/* Tables */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.data-table th {
+  text-align: left;
+  color: #555;
+  font-weight: 400;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 6px;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.data-table td {
+  padding: 3px 6px;
+  border-bottom: 1px solid #141414;
+  color: #aaa;
+}
+
+.data-table td:last-child {
+  text-align: right;
+}
+
+.data-table tr:hover td {
+  background: #151515;
+}
+
+.data-table .highlight {
+  color: #00ff41;
+  font-weight: 500;
+}
+
+/* Chart containers */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 160px;
+}
+
+.chart-container.tall {
+  height: 220px;
+}
+
+/* Market share legend */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 9px;
+  color: #666;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* Scrolling ticker */
+.ticker-bar {
+  background: #0d0d0d;
+  border: 1px solid #1a1a1a;
+  padding: 6px 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ticker-content {
+  display: inline-block;
+  animation: scroll 40s linear infinite;
+}
+
+.ticker-item {
+  display: inline;
+  margin-right: 40px;
+  font-size: 11px;
+}
+
+.ticker-item .ticker-name {
+  color: #888;
+}
+
+.ticker-item .ticker-val {
+  color: #00ff41;
+}
+
+.ticker-item .ticker-val.negative {
+  color: #ff6b6b;
+}
+
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Pro tip box */
+.tip-box {
+  background: #0d0d0d;
+  border: 1px solid #1a1a1a;
+  padding: 8px 10px;
+  margin-top: 8px;
+  font-size: 10px;
+  color: #666;
+}
+
+.tip-box strong {
+  color: #ffb000;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 600px) {
+  .grid { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: 1fr; }
+}

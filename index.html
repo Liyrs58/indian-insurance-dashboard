@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IRDAI · Indian Insurance Market Dashboard</title>
+  <link rel="stylesheet" href="css/bloomberg.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="title">IN<span>DIAN INSURANCE MARKET</span></div>
+      <div class="ticker">IRDAI · MARKET ANALYSIS</div>
+      <div class="time" id="clock">--:--:--</div>
+    </div>
+
+    <!-- Scrolling Ticker -->
+    <div class="ticker-bar">
+      <div class="ticker-content" id="ticker"></div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="grid-4">
+      <div class="kpi-card">
+        <div class="kpi-value green" id="total-premium">--</div>
+        <div class="kpi-label">Total Premium (USD Bn)</div>
+        <div class="kpi-sub">FY 2024</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value amber" id="penetration">--</div>
+        <div class="kpi-label">Insurance Penetration (% GDP)</div>
+        <div class="kpi-sub">Global Avg: 7.0%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value cyan" id="density">--</div>
+        <div class="kpi-label">Insurance Density (USD/capita)</div>
+        <div class="kpi-sub">Global Avg: $870</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value purple" id="global-rank">--</div>
+        <div class="kpi-label">Global Market Rank</div>
+        <div class="kpi-sub">Among ~180 countries</div>
+      </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="grid">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="label">Premium Growth Trend</span>
+          <span class="badge">2014–2024</span>
+        </div>
+        <div class="chart-container tall">
+          <canvas id="premiumTrend"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="label">Growth Rate YoY</span>
+          <span class="badge">% Change</span>
+        </div>
+        <div class="chart-container tall">
+          <canvas id="growthRates"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="label">Insurance Penetration vs Global Peers</span>
+          <span class="badge">% GDP</span>
+        </div>
+        <div class="chart-container tall">
+          <canvas id="globalCompare"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="grid">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="label">Life Insurance — Market Share</span>
+          <span class="badge">Top 8 Players</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="lifeShare"></canvas>
+        </div>
+        <div class="legend" id="lifeLegend"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="label">General Insurance — Market Share</span>
+          <span class="badge">Top 8 Players</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="generalShare"></canvas>
+        </div>
+        <div class="legend" id="generalLegend"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="label">Key Players Snapshot</span>
+          <span class="badge">Premium (Cr INR)</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="keyPlayers"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key Players Table -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="label">Key Industry Players</span>
+        <span class="badge">Data: IRDAI 2024</span>
+      </div>
+      <table class="data-table" id="players-table">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Type</th>
+            <th>Founded</th>
+            <th>Market Cap</th>
+            <th>Premium Income</th>
+            <th>Market Share</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Insight Box -->
+    <div class="tip-box">
+      <strong>INSIGHT:</strong> India's insurance penetration at 3.8% of GDP remains well below the global average of 7%, representing a <strong>$120B+</strong> addressable gap. The government's 'Insurance for All by 2047' initiative and IRDAI's liberalized FDI rules (74%) are expected to accelerate growth, particularly in the underpenetrated non-life segment. Paytm Insurance Broking operates at the intersection of digital distribution and this structural growth story.
+    </div>
+
+  </div>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
