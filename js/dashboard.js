@@ -12,12 +12,32 @@ let showEMA = false;
 let emaSeries = null;
 let chartPeriod = 'all';
 let selectedMonth = null;
+let viewMonthSelection = {};
+
+var FIELD_MAP = {
+  premium: 'premium_cr',
+  share: 'market_share_pct',
+  growth: 'yoy_growth_pct',
+  share_chg_pp: 'share_chg_pp',
+  cagr_3m: 'cagr_3m',
+  rank: 'rank',
+  name: 'name',
+  segment: 'seg',
+  seg: 'seg',
+};
 
 function getAvailableMonths() {
   if (!DATA) return [];
   var months = {};
   DATA.life.monthly_data.concat(DATA.non_life.monthly_data).forEach(function(m) { months[m.month] = true; });
   return Object.keys(months).sort();
+}
+
+function getSharedMonths() {
+  if (!DATA) return [];
+  var lifeMonths = {};
+  DATA.life.monthly_data.forEach(function(m) { lifeMonths[m.month] = true; });
+  return DATA.non_life.monthly_data.filter(function(m) { return lifeMonths[m.month]; }).map(function(m) { return m.month; }).sort();
 }
 
 function getMonthData(segment, month) {
@@ -27,7 +47,103 @@ function getMonthData(segment, month) {
   for (var i = 0; i < DATA[segment].monthly_data.length; i++) {
     if (DATA[segment].monthly_data[i].month === m) return DATA[segment].monthly_data[i];
   }
+  return null;
+}
+
+function getMonthDataOrLatest(segment, month) {
+  var result = getMonthData(segment, month);
+  if (result) return result;
+  return DATA && DATA[segment] ? DATA[segment].monthly_data[DATA[segment].monthly_data.length - 1] : null;
+}
+
+function getLatestSegmentMonth(segment) {
+  if (!DATA || !DATA[segment] || !DATA[segment].monthly_data.length) return null;
   return DATA[segment].monthly_data[DATA[segment].monthly_data.length - 1];
+}
+
+function getSharedMonthPair(month) {
+  if (!DATA) return { month: null, life: null, nonlife: null };
+  var months = getSharedMonths();
+  if (!months.length) return { month: null, life: null, nonlife: null };
+  var target = month && months.indexOf(month) !== -1 ? month : (DATA._meta && DATA._meta.latest_shared_month) || months[months.length - 1];
+  if (months.indexOf(target) === -1) target = months[months.length - 1];
+  return {
+    month: target,
+    life: getMonthData('life', target),
+    nonlife: getMonthData('non_life', target),
+  };
+}
+
+function sortByPremium(arr) {
+  return (arr || []).slice().sort(function(a, b) { return b.premium_cr - a.premium_cr; });
+}
+
+function shortName(name) {
+  if (!name) return '--';
+  if (name === 'Life Insurance Corporation of India') return 'LIC';
+  if (name === 'New India Assurance') return 'New India';
+  return name.split(' ').slice(0, 2).join(' ');
+}
+
+function segmentDisplayLabel(segment) {
+  if (segment === 'non_life' || segment === 'nonlife') return 'Non-Life';
+  if (segment === 'life') return 'Life';
+  return String(segment || '').replace(/_/g, ' ');
+}
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+  });
+}
+
+function getActiveAnalysisScope() {
+  var scope = {
+    view: currentView,
+    label: 'Comparable Market',
+    period: selectedMonth || '--',
+    segments: [],
+    rows: [],
+  };
+
+  function addSegment(key, label, monthData, color) {
+    if (!monthData) return;
+    var enriched = enrichInsurers(monthData.insurers, key, monthData.month).map(function(i) {
+      return Object.assign({}, i, { _seg: label, seg: label, _month: monthData.month });
+    });
+    scope.segments.push({
+      key: key,
+      label: label,
+      color: color,
+      month: monthData.month,
+      total_premium_cr: monthData.total_premium_cr,
+      total_growth_pct: monthData.total_growth_pct,
+      insurers: enriched,
+      source_file: monthData.source_file,
+      period_type: monthData.period_type,
+    });
+    scope.rows = scope.rows.concat(enriched);
+  }
+
+  if (currentView === 'life') {
+    var life = getMonthData('life', selectedMonth) || getLatestSegmentMonth('life');
+    scope.label = 'Life Insurance';
+    scope.period = life ? life.month : '--';
+    addSegment('life', 'Life', life, 'var(--green)');
+  } else if (currentView === 'nonlife') {
+    var nonlife = getMonthData('non_life', selectedMonth) || getLatestSegmentMonth('non_life');
+    scope.label = 'Non-Life Insurance';
+    scope.period = nonlife ? nonlife.month : '--';
+    addSegment('non_life', 'Non-Life', nonlife, 'var(--cyan)');
+  } else {
+    var pair = getSharedMonthPair(selectedMonth);
+    scope.label = currentView === 'compare' ? 'Life vs Non-Life' : 'Comparable Market';
+    scope.period = pair.month ? pair.month + ' shared' : '--';
+    addSegment('life', 'Life', pair.life, 'var(--green)');
+    addSegment('non_life', 'Non-Life', pair.nonlife, 'var(--cyan)');
+  }
+
+  return scope;
 }
 
 // ─── Company Enrichment DB ──────────────────────────────────────────
@@ -118,19 +234,42 @@ function getStockPrice(ticker) {
   return STOCKS.prices[ticker];
 }
 
+function getMonthsForView(view) {
+  if (!DATA) return [];
+  var months = view === 'life' ? DATA.life.monthly_data.map(function(m) { return m.month; }).sort()
+    : view === 'nonlife' ? DATA.non_life.monthly_data.map(function(m) { return m.month; }).sort()
+    : getSharedMonths();
+  return months.length ? months : getAvailableMonths();
+}
+
+function getDefaultMonthForView(view, months) {
+  if (!months.length) return null;
+  var meta = DATA && DATA._meta ? DATA._meta : {};
+  var candidate = view === 'life' ? meta.latest_life_month
+    : view === 'nonlife' ? meta.latest_non_life_month
+    : meta.latest_shared_month;
+  return candidate && months.indexOf(candidate) !== -1 ? candidate : months[months.length - 1];
+}
+
 function renderMonthSelector() {
   var sel = document.getElementById('monthSelect');
   if (!sel || !DATA) return;
-  var months = getAvailableMonths();
+  var months = getMonthsForView(currentView);
+  var remembered = viewMonthSelection[currentView];
+  var activeMonth = remembered && months.indexOf(remembered) !== -1 ? remembered : getDefaultMonthForView(currentView, months);
+  selectedMonth = activeMonth || null;
+  viewMonthSelection[currentView] = selectedMonth;
   sel.innerHTML = months.map(function(m) {
     var label = m;
+    var isSelected = (m === activeMonth);
     var isLatest = (m === months[months.length - 1]);
-    return '<option value="' + m + '"' + (isLatest ? ' selected' : '') + '>' + label + (isLatest ? ' (Latest)' : '') + '</option>';
+    return '<option value="' + m + '"' + (isSelected ? ' selected' : '') + '>' + label + (isLatest ? ' (Latest)' : '') + '</option>';
   }).join('');
 }
 
 function changeMonth(month) {
   selectedMonth = month || null;
+  viewMonthSelection[currentView] = selectedMonth;
   renderView(currentView);
 }
 
@@ -140,21 +279,24 @@ function fitChart() {
 
 function showSplash() {
   var s = DATA ? DATA.summary : {};
-  var life = getLifeLatest();
-  var nonlife = getNonLifeLatest();
-  var total = (s.total_market_premium_cr || 0).toFixed(0);
-  showPopup('IRDAI INDIAN INSURANCE MARKET ' + (getAvailableMonths().slice(-1)[0] || ''),
+  var pair = getSharedMonthPair(DATA && DATA._meta ? DATA._meta.latest_shared_month : null);
+  var life = pair.life;
+  var nonlife = pair.nonlife;
+  var total = life && nonlife ? life.total_premium_cr + nonlife.total_premium_cr : (s.total_market_premium_cr || 0);
+  var meta = DATA && DATA._meta ? DATA._meta : {};
+  showPopup('IRDAI INDIAN INSURANCE MARKET ' + (pair.month || ''),
     '<div style="font-size:10px;line-height:1.6;">' +
       '<div style="color:var(--amber);font-size:14px;font-weight:700;letter-spacing:2px;margin-bottom:6px;">INDIAN INSURANCE TERMINAL</div>' +
-      '<div style="color:var(--gray);font-size:8px;margin-bottom:8px;">IRDAI Flash Figures · Integrated NSE Data · Bloomberg-style Terminal</div>' +
+      '<div style="color:var(--gray);font-size:8px;margin-bottom:8px;">IRDAI Flash Figures · Integrated NSE Data · Market-terminal interface</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:9px;margin-bottom:6px;">' +
+        '<span style="color:var(--gray2)">Comparable Month</span><span style="color:var(--amber)">' + (pair.month || '--') + '</span>' +
         '<span style="color:var(--gray2)">Total Market</span><span style="color:var(--amber)">\u20B9' + (total/1000).toFixed(1) + 'K Cr</span>' +
         '<span style="color:var(--gray2)">Life Premium</span><span style="color:var(--green)">\u20B9' + (life ? life.total_premium_cr.toFixed(0) : '--') + ' Cr</span>' +
         '<span style="color:var(--gray2)">Non-Life Premium</span><span style="color:var(--cyan)">\u20B9' + (nonlife ? nonlife.total_premium_cr.toFixed(0) : '--') + ' Cr</span>' +
         '<span style="color:var(--gray2)">Penetration</span><span style="color:var(--purple)">' + s.insurance_penetration_pct + '% (Global: ' + s.global_penetration_avg_pct + '%)</span>' +
         '<span style="color:var(--gray2)">Density</span><span style="color:var(--orange)">$' + s.insurance_density_usd + '/capita</span>' +
-        '<span style="color:var(--gray2)">Life Insurers</span><span style="color:var(--green)">' + (life ? life.insurers.length : 0) + '</span>' +
-        '<span style="color:var(--gray2)">Non-Life Insurers</span><span style="color:var(--cyan)">' + (nonlife ? nonlife.insurers.length : 0) + '</span>' +
+        '<span style="color:var(--gray2)">Latest Life</span><span style="color:var(--green)">' + (meta.latest_life_month || '--') + '</span>' +
+        '<span style="color:var(--gray2)">Latest Non-Life</span><span style="color:var(--cyan)">' + (meta.latest_non_life_month || '--') + '</span>' +
         '<span style="color:var(--gray2)">NSE Stocks</span><span style="color:var(--amber)">' + (STOCKS ? Object.keys(STOCKS.prices).length : 0) + '</span>' +
         '<span style="color:var(--gray2)">Data Months</span><span>' + getAvailableMonths().length + '</span>' +
       '</div>' +
@@ -197,6 +339,7 @@ if (cachedData) {
   DATA = cachedData;
   STOCKS = cachedStocks;
   if (cachedBrief) window._briefMd = cachedBrief;
+  updateDataStatus('snapshot');
   init();
   // Still fetch fresh data in background
 }
@@ -221,11 +364,10 @@ Promise.all([
       renderKPI();
       renderView(currentView);
     }
+    updateDataStatus('snapshot');
   })
   .catch(function() {
-    document.getElementById('dataStatus').textContent = 'ERR';
-    document.getElementById('dataStatus').style.color = 'var(--red)';
-    document.querySelector('.status-dot').style.background = 'var(--red)';
+    updateDataStatus('error');
   });
 
 // ─── Init ───────────────────────────────────────────────────────────
@@ -240,15 +382,14 @@ function init() {
   setupNav();
   setupKeys();
   setupCmd();
+  setupStatus();
 }
 
 // ─── Clock ──────────────────────────────────────────────────────────
 function updateClock() {
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2,'0');
-  const m = String(now.getMinutes()).padStart(2,'0');
-  const s = String(now.getSeconds()).padStart(2,'0');
-  document.getElementById('clock').textContent = h + ':' + m + ':' + s + ' IST';
+  var now = new Date();
+  var ts = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  document.getElementById('clock').textContent = ts + ' IST';
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -262,8 +403,8 @@ function fmtPct(v) {
   if (v === undefined || v === null) return '--';
   return (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
 }
-function getLifeLatest() { return getMonthData('life', null); }
-function getNonLifeLatest() { return getMonthData('non_life', null); }
+function getLifeLatest() { return getLatestSegmentMonth('life'); }
+function getNonLifeLatest() { return getLatestSegmentMonth('non_life'); }
 function getLifeData(month) { return getMonthData('life', month); }
 function getNonLifeData(month) { return getMonthData('non_life', month); }
 
@@ -288,28 +429,30 @@ function exportCSV() {
   a.click();
   URL.revokeObjectURL(a.href);
   document.getElementById('cmdStatus').textContent = 'Exported ' + rows.length + ' rows';
-  setTimeout(function() { document.getElementById('cmdStatus').textContent = '60 insurers tracked'; }, 3000);
+  setTimeout(function() { updateCmdStatus(); }, 3000);
 }
 
 // ─── Ticker ─────────────────────────────────────────────────────────
 function renderTicker() {
   var life = getLifeLatest();
   var nonlife = getNonLifeLatest();
+  var sortedLife = sortByPremium(life.insurers);
+  var sortedNonLife = sortByPremium(nonlife.insurers);
 
   // Interleave life + non-life insurers
-  var maxLen = Math.max(life.insurers.length, nonlife.insurers.length);
+  var maxLen = Math.max(sortedLife.length, sortedNonLife.length);
   var items = '';
   for (var i = 0; i < maxLen; i++) {
-    if (i < life.insurers.length) {
-      var li = life.insurers[i];
+    if (i < sortedLife.length) {
+      var li = sortedLife[i];
       items += '<span class="ticker-item">' +
         '<span class="t-sym" style="color:var(--green)">' + li.name.split(' ')[0] + '</span>' +
         '<span class="t-px">' + fmtCr(li.premium_cr) + '</span>' +
         '<span class="t-chg ' + (li.yoy_growth_pct >= 0 ? 'up' : 'dn') + '">' + fmtPct(li.yoy_growth_pct) + '</span>' +
       '</span>';
     }
-    if (i < nonlife.insurers.length) {
-      var ni = nonlife.insurers[i];
+    if (i < sortedNonLife.length) {
+      var ni = sortedNonLife[i];
       items += '<span class="ticker-item">' +
         '<span class="t-sym" style="color:var(--cyan)">' + ni.name.split(' ')[0] + '</span>' +
         '<span class="t-px">' + fmtCr(ni.premium_cr) + '</span>' +
@@ -336,13 +479,18 @@ function renderTicker() {
 // ─── KPI ────────────────────────────────────────────────────────────
 function renderKPI() {
   var s = DATA.summary;
+  var referenceMonth = (DATA._meta && DATA._meta.latest_shared_month) || (getSharedMonths().slice(-1)[0] || getAvailableMonths().slice(-1)[0] || '');
+  var fiscalYear = referenceMonth ? (parseInt(referenceMonth.slice(0,4)) + (referenceMonth.slice(5) >= '04' ? 1 : 0)) : 2026;
+  var fyLabel = 'FY' + (fiscalYear - 1) + '-' + String(fiscalYear).slice(2);
+  var latestLife = getLifeLatest();
+  var latestNonLife = getNonLifeLatest();
   var kpis = [
-    { label: 'TOTAL MARKET', value: '\u20B9' + (s.total_market_premium_cr/1000).toFixed(1) + 'K Cr', sub: 'FY2025-26', color: 'var(--amber)', tip: 'Total insurance premium: \u20B9' + s.total_market_premium_cr.toFixed(0) + ' Cr' },
+    { label: 'TOTAL MARKET', value: '\u20B9' + (s.total_market_premium_cr/1000).toFixed(1) + 'K Cr', sub: 'Shared ' + referenceMonth + ' · ' + fyLabel, color: 'var(--amber)', tip: 'Comparable life + non-life premium: \u20B9' + s.total_market_premium_cr.toFixed(0) + ' Cr' },
     { label: 'LIFE PREMIUM', value: '\u20B9' + (s.life_premium_cr/1000).toFixed(1) + 'K Cr', sub: Math.round((s.life_premium_cr/s.total_market_premium_cr)*100) + '% share', color: 'var(--green)', tip: 'Life premium: \u20B9' + s.life_premium_cr.toFixed(0) + ' Cr' },
     { label: 'NON-LIFE', value: '\u20B9' + (s.non_life_premium_cr/1000).toFixed(1) + 'K Cr', sub: Math.round((s.non_life_premium_cr/s.total_market_premium_cr)*100) + '% share', color: 'var(--cyan)', tip: 'Non-life premium: \u20B9' + s.non_life_premium_cr.toFixed(0) + ' Cr' },
     { label: 'PENETRATION', value: s.insurance_penetration_pct + '%', sub: 'Global: ' + s.global_penetration_avg_pct + '%', color: 'var(--purple)', tip: 'Insurance penetration as % of GDP. Global avg: ' + s.global_penetration_avg_pct + '%' },
     { label: 'DENSITY', value: '$' + s.insurance_density_usd, sub: 'Per capita', color: 'var(--orange)', tip: 'Premium per person per year in USD' },
-    { label: 'PLAYERS', value: getLifeLatest().insurers.length + getNonLifeLatest().insurers.length, sub: 'Monitored', color: 'var(--pink)', tip: getLifeLatest().insurers.length + ' life + ' + getNonLifeLatest().insurers.length + ' non-life insurers tracked' },
+    { label: 'PLAYERS', value: latestLife.insurers.length + latestNonLife.insurers.length, sub: 'Monitored', color: 'var(--pink)', tip: latestLife.insurers.length + ' life + ' + latestNonLife.insurers.length + ' non-life insurers tracked' },
   ];
   document.getElementById('kpiStrip').innerHTML = kpis.map(function(k) {
     return '<div class="kpi-item" title="' + k.tip + '"><div class="kpi-label">' + k.label + '</div><div class="kpi-value" style="color:' + k.color + '">' + k.value + '</div><div class="kpi-sub">' + k.sub + '</div></div>';
@@ -350,6 +498,29 @@ function renderKPI() {
 }
 
 // ─── Navigation ─────────────────────────────────────────────────────
+function activatePanelTab(panel, tabKey) {
+  if (!panel || !tabKey) return;
+  panel.querySelectorAll('.panel-tab').forEach(function(n) {
+    var key = n.dataset.tab || n.dataset.panel;
+    n.classList.toggle('active', key === tabKey);
+  });
+  panel.querySelectorAll('.tab-content').forEach(function(n) { n.classList.remove('active'); });
+  var target = document.getElementById(tabKey + '-tab');
+  if (target && panel.contains(target)) {
+    target.classList.add('active');
+    if (tabKey === 'hhi' && typeof renderHHI === 'function') renderHHI();
+    if (tabKey === 'movers' && typeof renderMovers === 'function') renderMovers();
+    if (tabKey === 'brief' && typeof renderBrief === 'function') renderBrief();
+  }
+}
+
+function resetPanelTabs() {
+  document.querySelectorAll('.panel').forEach(function(panel) {
+    if (panel.querySelector('[data-tab="table"]')) activatePanelTab(panel, 'table');
+    else if (panel.querySelector('[data-panel="insights"]')) activatePanelTab(panel, 'insights');
+  });
+}
+
 function setupNav() {
   document.querySelectorAll('#navTabs .nav-tab').forEach(function(el) {
     el.addEventListener('click', function() {
@@ -361,18 +532,8 @@ function setupNav() {
   document.querySelectorAll('.panel-tab').forEach(function(el) {
     el.addEventListener('click', function() {
       var parent = el.closest('.panel');
-      parent.querySelectorAll('.panel-tab').forEach(function(n) { n.classList.remove('active'); });
-      el.classList.add('active');
-      parent.querySelectorAll('.tab-content').forEach(function(n) { n.classList.remove('active'); });
       var tabKey = el.dataset.tab || el.dataset.panel;
-      var target = document.getElementById(tabKey + '-tab');
-      if (target) {
-        target.classList.add('active');
-        // Lazy-render specialty tabs
-        if (tabKey === 'hhi' && typeof renderHHI === 'function') renderHHI();
-        if (tabKey === 'movers' && typeof renderMovers === 'function') renderMovers();
-        if (tabKey === 'brief' && typeof renderBrief === 'function') renderBrief();
-      }
+      activatePanelTab(parent, tabKey);
     });
   });
   document.querySelectorAll('[data-tf]').forEach(function(el) {
@@ -396,6 +557,16 @@ function setupNav() {
     });
   }
 
+  // Hide period buttons that exceed available months
+  var allMonthsCount = getAvailableMonths().length;
+  document.querySelectorAll('.period-btn').forEach(function(el) {
+    var p = el.dataset.period;
+    var needed = { '1m': 1, '3m': 3, '6m': 6 }[p] || 0;
+    if (needed > 0 && allMonthsCount < needed) {
+      el.style.display = 'none';
+    }
+  });
+
   // Period buttons
   document.querySelectorAll('.period-btn').forEach(function(el) {
     el.addEventListener('click', function() {
@@ -409,16 +580,17 @@ function setupNav() {
 
 function setupKeys() {
   document.addEventListener('keydown', function(e) {
-    if (e.key === '1') { e.preventDefault(); switchView('overview'); }
-    if (e.key === '2') { e.preventDefault(); switchView('life'); }
-    if (e.key === '3') { e.preventDefault(); switchView('nonlife'); }
-    if (e.key === '4') { e.preventDefault(); switchView('compare'); }
     if (e.key === 'Escape') closePopup();
     if (e.key === '?' || e.key === '/') { e.preventDefault(); showHelp(); }
-    if (e.key === 'f' || e.key === 'F') { e.preventDefault(); fitChart(); }
-    if (e.key === 'e' || e.key === 'E') { e.preventDefault(); toggleEMAByKey(); }
-    if (e.key === 'i' || e.key === 'I') { e.preventDefault(); showSplash(); }
     if (e.key === 'r' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); refreshData(); }
+    if (e.key.length !== 1) return;
+    if (e.key === '1') { e.preventDefault(); switchView('overview'); }
+    else if (e.key === '2') { e.preventDefault(); switchView('life'); }
+    else if (e.key === '3') { e.preventDefault(); switchView('nonlife'); }
+    else if (e.key === '4') { e.preventDefault(); switchView('compare'); }
+    else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); fitChart(); }
+    else if (e.key === 'e' || e.key === 'E') { e.preventDefault(); toggleEMAByKey(); }
+    else if (e.key === 'i' || e.key === 'I') { e.preventDefault(); showSplash(); }
   });
 }
 
@@ -434,7 +606,8 @@ function setupCmd() {
   var input = document.getElementById('cmdInput');
   input.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
-      var cmd = input.value.trim().toLowerCase();
+      var raw = input.value.trim();
+      var cmd = raw.toLowerCase();
       input.value = '';
       if (cmd === 'help' || cmd === '?') showHelp();
       else if (cmd === 'overview' || cmd === '1') switchView('overview');
@@ -443,15 +616,42 @@ function setupCmd() {
       else if (cmd === 'compare' || cmd === '4') switchView('compare');
       else if (cmd === 'export') { exportCSV(); }
       else if (cmd === 'splash' || cmd === 'i') { showSplash(); }
+      else if (cmd === 'audit' || cmd === 'sources') { showAudit(); }
       else if (cmd.indexOf('search ') === 0) {
-        var q = cmd.slice(7);
-        if (table) table.setFilter('name', 'like', q);
+        applySearchFilter(raw.slice(raw.indexOf(' ') + 1));
       } else {
         document.getElementById('cmdStatus').textContent = 'Unknown: ' + cmd;
-        setTimeout(function() { document.getElementById('cmdStatus').textContent = '60 insurers tracked'; }, 2000);
+        setTimeout(function() { updateCmdStatus(); }, 2000);
       }
     }
   });
+}
+
+function applySearchFilter(query) {
+  if (!table) return;
+  var q = (query || '').trim().toLowerCase();
+  if (!q) {
+    table.clearFilter(true);
+    updateCmdStatus();
+    return;
+  }
+  var aliases = {
+    lic: 'life insurance corporation of india',
+    niacl: 'new india assurance',
+    newindia: 'new india assurance',
+    hdfc: 'hdfc',
+    icici: 'icici',
+    sbi: 'sbi',
+  };
+  var expanded = aliases[q] || q;
+  table.clearFilter(true);
+  table.setFilter(function(data) {
+    var name = (data.name || '').toLowerCase();
+    var seg = (data.seg || data._seg || '').toLowerCase();
+    return name.indexOf(q) !== -1 || name.indexOf(expanded) !== -1 || seg.indexOf(q) !== -1;
+  });
+  var activeRows = table.getData('active').length;
+  document.getElementById('cmdStatus').textContent = 'Search "' + query + '" · ' + activeRows + ' rows';
 }
 
 function showHelp() {
@@ -462,6 +662,7 @@ function showHelp() {
       '<span style="color:var(--cyan)">3 / nonlife</span><span>Non-life insurance view</span>' +
       '<span style="color:var(--cyan)">4 / compare</span><span>Life vs Non-Life comparison</span>' +
       '<span style="color:var(--cyan)">search &lt;name&gt;</span><span>Filter table by company name</span>' +
+      '<span style="color:var(--cyan)">audit / sources</span><span>Open data quality and source audit</span>' +
       '<span style="color:var(--cyan)">export</span><span>Download table as CSV</span>' +
       '<span style="color:var(--cyan)">F / fit</span><span>Reset chart zoom</span>' +
       '<span style="color:var(--cyan)">E / ema</span><span>Toggle EMA overlay</span>' +
@@ -474,11 +675,127 @@ function showHelp() {
   );
 }
 
+function setupStatus() {
+  var status = document.querySelector('.topbar-status');
+  if (!status) return;
+  status.setAttribute('role', 'button');
+  status.setAttribute('tabindex', '0');
+  status.addEventListener('click', function() { showAudit(); });
+  status.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      showAudit();
+    }
+  });
+}
+
 var refreshCount = 0;
 function refreshData() {
   refreshCount++;
-  document.getElementById('dataStatus').textContent = 'REFRESH';
-  setTimeout(function() { document.getElementById('dataStatus').textContent = 'LIVE'; }, 1000);
+  updateDataStatus('loading');
+  Promise.all([
+    fetch('data/irdai-processed.json').then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
+    fetch('data/stock-prices.json').then(function(r) { if (!r.ok) return null; return r.json(); }).catch(function() { return null; }),
+    fetch('data/analysis_summary.md').then(function(r) { if (!r.ok) return null; return r.text(); }).catch(function() { return null; }),
+  ]).then(function(results) {
+    DATA = results[0];
+    STOCKS = results[1];
+    cacheSave('data', DATA);
+    cacheSave('stocks', STOCKS);
+    if (results[2]) { window._briefMd = results[2]; cacheSave('brief', results[2]); }
+    renderMonthSelector();
+    renderTicker();
+    renderKPI();
+    renderView(currentView);
+    updateDataStatus('snapshot');
+  }).catch(function() {
+    updateDataStatus('error');
+  });
+}
+
+function updateCmdStatus() {
+  if (!DATA) return;
+  var life = getLifeLatest();
+  var nonlife = getNonLifeLatest();
+  if (!life || !nonlife) return;
+  var status = DATA._meta && DATA._meta.validation ? DATA._meta.validation.status.toUpperCase() : 'UNVALIDATED';
+  document.getElementById('cmdStatus').textContent = life.insurers.length + ' life + ' + nonlife.insurers.length + ' non-life insurers · shared ' + ((DATA._meta && DATA._meta.latest_shared_month) || '--') + ' · ' + status;
+}
+
+function updateDataStatus(state) {
+  var el = document.getElementById('dataStatus');
+  var dot = document.querySelector('.status-dot');
+  if (!el) return;
+  if (state === 'loading') {
+    el.textContent = 'LOADING';
+    el.style.color = 'var(--amber)';
+    if (dot) dot.style.background = 'var(--amber)';
+  } else if (state === 'error') {
+    el.textContent = 'OFFLINE';
+    el.style.color = 'var(--red)';
+    if (dot) dot.style.background = 'var(--red)';
+  } else if (state === 'snapshot' && DATA && DATA._meta) {
+    var ts = DATA._meta.research_as_of || DATA._meta.last_updated || DATA._meta.generated_at || 'unknown';
+    var validation = DATA._meta.validation ? DATA._meta.validation.status : 'ok';
+    el.textContent = 'SNAPSHOT: ' + ts + (validation !== 'ok' ? ' · ' + validation.toUpperCase() : '');
+    var statusColor = validation === 'error' ? 'var(--red)' : (validation === 'warning' ? 'var(--amber)' : 'var(--green)');
+    el.style.color = statusColor;
+    if (dot) dot.style.background = statusColor;
+  } else {
+    el.textContent = 'SNAPSHOT';
+    el.style.color = 'var(--green)';
+    if (dot) dot.style.background = 'var(--green)';
+  }
+}
+
+function showAudit() {
+  if (!DATA || !DATA._meta) {
+    showPopup('DATA AUDIT', '<div style="font-size:9px;color:var(--gray2);">No data loaded.</div>');
+    return;
+  }
+  var meta = DATA._meta;
+  var validation = meta.validation || { status: 'unvalidated', issues: [] };
+  var issues = validation.issues || [];
+  var counts = issues.reduce(function(acc, issue) {
+    acc[issue.severity] = (acc[issue.severity] || 0) + 1;
+    return acc;
+  }, {});
+  var statusColor = validation.status === 'error' ? 'var(--red)' : (validation.status === 'warning' ? 'var(--amber)' : 'var(--green)');
+  var sourceHtml = (meta.source_links || []).map(function(src) {
+    return '<div class="audit-row">' +
+      '<span>' + escapeHtml(src.name) + '</span>' +
+      '<span>' + escapeHtml(src.latest_observed || src.url) + '</span>' +
+    '</div>';
+  }).join('');
+  var issueHtml = issues.slice(0, 8).map(function(issue) {
+    var color = issue.severity === 'error' ? 'var(--red)' : (issue.severity === 'warning' ? 'var(--amber)' : 'var(--gray2)');
+    return '<div class="audit-issue">' +
+      '<span style="color:' + color + '">' + escapeHtml(issue.severity.toUpperCase()) + '</span>' +
+      '<span>' + escapeHtml(issue.code) + '</span>' +
+      '<span>' + escapeHtml(issue.message) + '</span>' +
+    '</div>';
+  }).join('');
+  var extractionNotes = DATA.life.monthly_data.concat(DATA.non_life.monthly_data)
+    .reduce(function(all, month) { return all.concat(month.extraction_notes || []); }, []);
+  var notesHtml = extractionNotes.length ? extractionNotes.map(function(note) {
+    return '<div class="audit-note">' + escapeHtml(note) + '</div>';
+  }).join('') : '<div class="audit-note">No duplicate source records retained in processed output.</div>';
+
+  showPopup('DATA QUALITY AUDIT',
+    '<div class="audit-grid">' +
+      '<div class="audit-card"><div class="label">Snapshot</div><div class="value" style="color:var(--cyan)">' + escapeHtml(meta.research_as_of || meta.last_updated || '--') + '</div><div class="desc">Research as-of date</div></div>' +
+      '<div class="audit-card"><div class="label">Validation</div><div class="value" style="color:' + statusColor + '">' + escapeHtml((validation.status || 'unvalidated').toUpperCase()) + '</div><div class="desc">' + issues.length + ' issues tracked</div></div>' +
+      '<div class="audit-card"><div class="label">Shared Month</div><div class="value" style="color:var(--amber)">' + escapeHtml(meta.latest_shared_month || '--') + '</div><div class="desc">Comparable headline period</div></div>' +
+      '<div class="audit-card"><div class="label">Latest Segment</div><div class="value" style="color:var(--white)">' + escapeHtml((meta.latest_life_month || '--') + ' / ' + (meta.latest_non_life_month || '--')) + '</div><div class="desc">Life / non-life</div></div>' +
+    '</div>' +
+    '<div class="section-label">SEVERITY COUNTS</div>' +
+    '<div class="audit-row"><span>Errors</span><span style="color:var(--red)">' + (counts.error || 0) + '</span></div>' +
+    '<div class="audit-row"><span>Warnings</span><span style="color:var(--amber)">' + (counts.warning || 0) + '</span></div>' +
+    '<div class="audit-row"><span>Info</span><span style="color:var(--gray2)">' + (counts.info || 0) + '</span></div>' +
+    '<div class="section-label">PRIMARY SOURCES</div>' + sourceHtml +
+    '<div class="section-label">TOP VALIDATION ITEMS</div>' + issueHtml +
+    '<div class="section-label">EXTRACTION NOTES</div>' + notesHtml
+  );
 }
 
 // ─── Popup ──────────────────────────────────────────────────────────
@@ -494,6 +811,9 @@ function closePopup() {
 // ─── Render View ────────────────────────────────────────────────────
 function renderView(view) {
   currentView = view;
+  renderedTabs = {};
+  resetPanelTabs();
+  renderMonthSelector();
   if (table) { table.destroy(); table = null; }
 
   // Remove EMA series before destroying chart
@@ -527,8 +847,15 @@ function renderView(view) {
 
 // ─── Render Overview ────────────────────────────────────────────────
 function renderOverview() {
-  var life = getLifeLatest();
-  var nonlife = getNonLifeLatest();
+  var pair = getSharedMonthPair(selectedMonth);
+  var life = pair.life;
+  var nonlife = pair.nonlife;
+  if (!life || !nonlife) {
+    document.getElementById('tableTitle').textContent = 'ALL INSURERS — UNAVAILABLE';
+    document.getElementById('tableMonth').textContent = 'No shared life/non-life month';
+    document.getElementById('tableContainer').innerHTML = '<div style="color:var(--gray2);font-size:9px;padding:20px;text-align:center;">Comparable market data unavailable</div>';
+    return;
+  }
   var enrichedLife = enrichInsurers(life.insurers, 'life', life.month);
   var enrichedNonLife = enrichInsurers(nonlife.insurers, 'non_life', nonlife.month);
   var combined = enrichedLife.map(function(i) { return Object.assign({}, i, { _seg: 'Life' }); })
@@ -536,47 +863,64 @@ function renderOverview() {
     .sort(function(a, b) { return b.premium_cr - a.premium_cr; });
 
   document.getElementById('tableTitle').textContent = 'ALL INSURERS';
-  document.getElementById('tableMonth').textContent = nonlife.month;
+  document.getElementById('tableMonth').textContent = pair.month + ' shared';
 
   buildTable(combined, ['rank', 'name', 'segment', 'premium', 'share', 'growth', 'share_chg_pp', 'cagr_3m'],
     { rank: { title: '#', width: 30 }, name: { title: 'Company', width: 200 }, segment: { title: 'Type', width: 60 }, premium: { title: 'Premium' }, share: { title: 'Shr%' }, growth: { title: 'YoY%' }, share_chg_pp: { title: 'ShrChg' }, cagr_3m: { title: '3M CAGR' } }
   );
 
   updateChartData('all');
-  updateChartHeader('IRDAI', fmtCr(combined[0].premium_cr), fmtPct(combined[0].yoy_growth_pct), combined[0].yoy_growth_pct >= 0);
+  var top = combined[0];
+  if (top) updateChartHeader('IRDAI', fmtCr(top.premium_cr), fmtPct(top.yoy_growth_pct), top.yoy_growth_pct >= 0);
   updateMeta(life, nonlife);
   renderOverviewInsights(life, nonlife);
-  renderPlayers(life.insurers.slice(0, 8), nonlife.insurers.slice(0, 8));
+  var sortedLife = sortByPremium(life.insurers);
+  var sortedNonLife = sortByPremium(nonlife.insurers);
+  renderPlayers(sortedLife.slice(0, 8), sortedNonLife.slice(0, 8));
   renderPenetration();
 }
 
 // ─── Render Segment ─────────────────────────────────────────────────
 function renderSegment(segment) {
-  var segData = DATA[segment];
-  var latest = segData.monthly_data[segData.monthly_data.length - 1];
+  var segKey = segment === 'life' ? 'life' : 'non_life';
+  var latest = getMonthData(segKey, null);
+  if (!latest) {
+    document.getElementById('tableTitle').textContent = (segment === 'life' ? 'LIFE INSURANCE' : 'NON-LIFE INSURANCE') + ' — UNAVAILABLE';
+    document.getElementById('tableMonth').textContent = selectedMonth ? 'No data for ' + selectedMonth : 'No data';
+    document.getElementById('tableContainer').innerHTML = '<div style="color:var(--gray2);font-size:9px;padding:20px;text-align:center;">Data unavailable for selected period</div>';
+    return;
+  }
   var label = segment === 'life' ? 'LIFE INSURANCE' : 'NON-LIFE INSURANCE';
 
   document.getElementById('tableTitle').textContent = label;
   document.getElementById('tableMonth').textContent = latest.month;
 
-  var enriched = enrichInsurers(latest.insurers, segment, latest.month);
-  buildTable(enriched, ['rank', 'name', 'premium', 'share', 'growth', 'share_chg_pp', 'cagr_3m'],
+  var enriched = enrichInsurers(latest.insurers, segKey, latest.month);
+  var sorted = sortByPremium(enriched);
+  buildTable(sorted, ['rank', 'name', 'premium', 'share', 'growth', 'share_chg_pp', 'cagr_3m'],
     { rank: { title: '#', width: 30 }, name: { title: 'Company', width: 220 }, premium: { title: 'Premium' }, share: { title: 'Shr%' }, growth: { title: 'YoY%' }, share_chg_pp: { title: 'ShrChg' }, cagr_3m: { title: '3M CAGR' } }
   );
 
-  updateChartData(segment);
+  updateChartData(segKey);
   updateChartHeader(label, fmtCr(latest.total_premium_cr), fmtPct(latest.total_growth_pct), latest.total_growth_pct >= 0);
-  updateMetaSegment(latest, segment);
-  renderSegmentInsights(latest, segment);
+  updateMetaSegment(latest, segKey);
+  renderSegmentInsights(latest, segKey);
 }
 
 // ─── Render Compare ────────────────────────────────────────────────
 function renderCompare() {
-  var life = getLifeLatest();
-  var nonlife = getNonLifeLatest();
+  var pair = getSharedMonthPair(selectedMonth);
+  var life = pair.life;
+  var nonlife = pair.nonlife;
+  if (!life || !nonlife) {
+    document.getElementById('tableTitle').textContent = 'LIFE vs NON-LIFE — UNAVAILABLE';
+    document.getElementById('tableMonth').textContent = 'No shared month';
+    document.getElementById('tableContainer').innerHTML = '<div style="color:var(--gray2);font-size:9px;padding:20px;text-align:center;">Comparable segment data unavailable</div>';
+    return;
+  }
 
   document.getElementById('tableTitle').textContent = 'LIFE vs NON-LIFE';
-  document.getElementById('tableMonth').textContent = life.month;
+  document.getElementById('tableMonth').textContent = pair.month + ' shared';
 
   var both = [
     { name: 'Life Insurance', premium_cr: life.total_premium_cr, market_share_pct: 0, yoy_growth_pct: life.total_growth_pct, _seg: 'Life' },
@@ -627,9 +971,13 @@ function enrichInsurers(insurers, segment, month) {
         if (older.insurers[j].name === ins.name) { olderIns = older.insurers[j]; break; }
       }
       if (olderIns && olderIns.premium_cr > 0 && ins.premium_cr > 0) {
-        var periods = 3; // 3 months
+        var periods = 3;
         var ratio = ins.premium_cr / olderIns.premium_cr;
         r.cagr_3m = parseFloat(((Math.pow(ratio, 1/periods) - 1) * 100).toFixed(1));
+      } else if (olderIns && olderIns.premium_cr === 0 && ins.premium_cr === 0) {
+        r.cagr_3m = 0;
+      } else if (olderIns && olderIns.premium_cr === 0 && ins.premium_cr > 0) {
+        r.cagr_3m = Infinity;
       } else {
         r.cagr_3m = null;
       }
@@ -646,6 +994,7 @@ function buildTable(data, columns, colDefs) {
   var colArr = columns.map(function(key) {
     var def = colDefs[key] || {};
     var formatter = 'plaintext';
+    var field = FIELD_MAP[key] || key;
 
     if (key === 'rank') {
       formatter = function(c) { return '<span style="color:var(--gray)">' + c.getValue() + '</span>'; };
@@ -660,10 +1009,15 @@ function buildTable(data, columns, colDefs) {
     } else if (key === 'premium') {
       formatter = function(c) { return '<span style="color:var(--white);font-variant-numeric:tabular-nums">' + fmtCr(c.getValue()) + '</span>'; };
     } else if (key === 'share') {
-      formatter = function(c) { return '<span style="color:var(--amber);font-variant-numeric:tabular-nums">' + c.getValue().toFixed(1) + '%</span>'; };
+      formatter = function(c) {
+        var v = c.getValue();
+        if (v === null || v === undefined) return '<span style="color:var(--gray2)">--</span>';
+        return '<span style="color:var(--amber);font-variant-numeric:tabular-nums">' + v.toFixed(1) + '%</span>';
+      };
     } else if (key === 'growth') {
       formatter = function(c) {
         var v = c.getValue();
+        if (v === null || v === undefined) return '<span style="color:var(--gray2)">--</span>';
         var cls = v >= 0 ? 'var(--green)' : 'var(--red)';
         return '<span style="color:' + cls + ';font-variant-numeric:tabular-nums">' + fmtPct(v) + '</span>';
       };
@@ -685,7 +1039,7 @@ function buildTable(data, columns, colDefs) {
 
     return {
       title: def.title || key.toUpperCase(),
-      field: key,
+      field: field,
       width: def.width,
       hozAlign: (key === 'rank' || key === 'name' || key === 'segment' || key === 'seg') ? 'left' : 'right',
       headerFilter: key === 'name' ? 'input' : false,
@@ -696,8 +1050,14 @@ function buildTable(data, columns, colDefs) {
   });
 
   var rows = data.map(function(d, i) {
-    var r = Object.assign({}, d, { rank: i + 1 });
+    var r = Object.assign({}, d);
+    Object.keys(FIELD_MAP).forEach(function(k) {
+      var src = FIELD_MAP[k];
+      if (d[src] !== undefined) r[k] = d[src];
+    });
+    r.rank = i + 1;
     if (d._seg) r.seg = d._seg;
+    if (d.seg) r.seg = d.seg;
     return r;
   });
 
@@ -706,7 +1066,6 @@ function buildTable(data, columns, colDefs) {
     columns: colArr,
     layout: 'fitDataFill',
     height: '100%',
-    virtualDom: true,
     rowFormatter: function(row) {
       var d = row.getData();
       if (d._seg === 'Life' || d.seg === 'Life') {
@@ -723,9 +1082,9 @@ function buildTable(data, columns, colDefs) {
     var html =
       '<div style="display:grid;grid-template-columns:100px 1fr;gap:4px 12px;font-size:10px;">' +
         '<span style="color:var(--gray)">Premium</span><span style="color:var(--white)">' + fmtCr(d.premium_cr) + '</span>' +
-        '<span style="color:var(--gray)">Market Share</span><span style="color:var(--amber)">' + d.market_share_pct.toFixed(1) + '%</span>' +
-        '<span style="color:var(--gray)">Share Chg</span><span style="color:' + (d.share_chg_pp >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (d.share_chg_pp !== null && d.share_chg_pp !== undefined ? (d.share_chg_pp >= 0 ? '+' : '') + d.share_chg_pp.toFixed(2) + 'pp' : '<span style="color:var(--gray2)">--</span>') + '</span>' +
-        '<span style="color:var(--gray)">3M CAGR</span><span style="color:' + (d.cagr_3m >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (d.cagr_3m !== null && d.cagr_3m !== undefined ? (d.cagr_3m >= 0 ? '+' : '') + d.cagr_3m.toFixed(1) + '%' : '<span style="color:var(--gray2)">--</span>') + '</span>' +
+        '<span style="color:var(--gray)">Market Share</span><span style="color:var(--amber)">' + (d.market_share_pct != null ? d.market_share_pct.toFixed(1) + '%' : '--') + '</span>' +
+        '<span style="color:var(--gray)">Share Chg</span><span style="color:' + (d.share_chg_pp >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (d.share_chg_pp != null ? (d.share_chg_pp >= 0 ? '+' : '') + d.share_chg_pp.toFixed(2) + 'pp' : '<span style="color:var(--gray2)">--</span>') + '</span>' +
+        '<span style="color:var(--gray)">3M CAGR</span><span style="color:' + (d.cagr_3m >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (d.cagr_3m != null ? (d.cagr_3m >= 0 ? '+' : '') + d.cagr_3m.toFixed(1) + '%' : '<span style="color:var(--gray2)">--</span>') + '</span>' +
         '<span style="color:var(--gray)">YoY Growth</span><span style="color:' + (d.yoy_growth_pct >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmtPct(d.yoy_growth_pct) + '</span>' +
         '<span style="color:var(--gray)">Rank</span><span>#' + d.rank + '</span>' +
         (d._seg ? '<span style="color:var(--gray)">Segment</span><span>' + d._seg + '</span>' : '') +
@@ -866,7 +1225,7 @@ function toggleEMA() {
   if (!showEMA) return;
 
   // Rebuild data from current chartType
-  var data;
+  var data, minPoints = 6;
   if (chartType === 'all' || chartType === 'overview') {
     var nonLifeByMonth = {};
     DATA.non_life.monthly_data.forEach(function(m) { nonLifeByMonth[m.month] = m; });
@@ -883,6 +1242,12 @@ function toggleEMA() {
     return; // Skip EMA for compare view
   }
 
+  if (data.length < minPoints) {
+    showEMA = false;
+    document.getElementById('cmdStatus').textContent = 'Need >= ' + minPoints + ' periods for EMA';
+    setTimeout(function() { updateCmdStatus(); }, 3000);
+    return;
+  }
   var emaData = calcEMA(data, 3);
   if (!emaData) return;
 
@@ -900,6 +1265,11 @@ function applyPeriod(data) {
   if (chartPeriod === 'all' || !data || !data.length) return data;
   var months = { '1m': 1, '3m': 3, '6m': 6 }[chartPeriod] || 0;
   if (months <= 0) return data;
+  if (data.length < months) {
+    document.getElementById('cmdStatus').textContent = 'Only ' + data.length + ' months available, showing all';
+    setTimeout(function() { updateCmdStatus(); }, 3000);
+    return data;
+  }
   return data.slice(-months);
 }
 
@@ -981,6 +1351,17 @@ function updateChart() {
   series.setData(data);
   chartSeries.push(series);
   chart.timeScale().fitContent();
+
+  // Show data caveat
+  var caveatEl = document.getElementById('chartCaveat');
+  if (!caveatEl) {
+    caveatEl = document.createElement('div');
+    caveatEl.id = 'chartCaveat';
+    caveatEl.style.cssText = 'font-size:7px;color:var(--gray2);text-align:center;padding:1px 0;letter-spacing:0.5px;';
+    var chartControls = document.querySelector('.chart-controls');
+    if (chartControls && chartControls.parentNode) chartControls.parentNode.insertBefore(caveatEl, chartControls.nextSibling);
+  }
+  caveatEl.textContent = '\u26A0 Cumulative YTD series reset at fiscal-year boundaries; compare shared months only.';
 }
 
 function updateChartHeader(ticker, price, change, isUp) {
@@ -993,52 +1374,66 @@ function updateChartHeader(ticker, price, change, isUp) {
 
 function updateMeta(life, nonlife) {
   document.getElementById('chartMeta').innerHTML =
-    '<span>Life \u20B9<span>' + fmtCr(life.total_premium_cr) + '</span></span>' +
-    '<span>Non-Life \u20B9<span>' + fmtCr(nonlife.total_premium_cr) + '</span></span>' +
+    '<span>Life <span>' + fmtCr(life.total_premium_cr) + '</span></span>' +
+    '<span>Non-Life <span>' + fmtCr(nonlife.total_premium_cr) + '</span></span>' +
     '<span>Life YoY <span class="' + (life.total_growth_pct >= 0 ? 'up' : 'dn') + '">' + fmtPct(life.total_growth_pct) + '</span></span>' +
     '<span>Non-Life YoY <span class="' + (nonlife.total_growth_pct >= 0 ? 'up' : 'dn') + '">' + fmtPct(nonlife.total_growth_pct) + '</span></span>';
 }
 
 function updateMetaSegment(latest, segment) {
   var color = segment === 'life' ? 'var(--green)' : 'var(--cyan)';
+  var top = sortByPremium(latest.insurers)[0];
+  var topShare = top ? top.market_share_pct.toFixed(1) + '%' : '--';
   document.getElementById('chartMeta').innerHTML =
     '<span>Total <span style="color:' + color + '">' + fmtCr(latest.total_premium_cr) + '</span></span>' +
     '<span>YoY <span class="' + (latest.total_growth_pct >= 0 ? 'up' : 'dn') + '">' + fmtPct(latest.total_growth_pct) + '</span></span>' +
     '<span>Players <span>' + latest.insurers.length + '</span></span>' +
-    '<span>Top Share <span>' + latest.insurers[0].market_share_pct.toFixed(1) + '%</span></span>';
+    '<span>Top Share <span>' + topShare + '</span></span>';
 }
 
 // ─── Brief Tab ──────────────────────────────────────────────────────
 var BRIEF_RENDERED = false;
+function generateBrief() {
+  if (!DATA) return 'No data available.';
+  var scope = getActiveAnalysisScope();
+  if (!scope.segments.length) return 'No data available.';
+  var totalCr = scope.segments.reduce(function(sum, segment) { return sum + segment.total_premium_cr; }, 0) / 1000;
+  var line = function(t) { return '<div style="color:var(--gray2);font-size:9px;margin:1px 0;">' + t + '</div>'; };
+  var heading = function(t) { return '<div style="color:var(--amber);font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin:6px 0 2px;">' + t + '</div>'; };
+  var strong = function(t) { return '<strong style="color:var(--white)">' + t + '</strong>'; };
+  var fmt = function(v) { return (v >= 0 ? '+' : '') + v.toFixed(1) + '%'; };
+  var html = heading(scope.label + ' Brief');
+  html += line('Period: ' + strong(scope.period));
+  html += line('Total Premium: ' + strong('\u20B9' + totalCr.toFixed(1) + 'K Cr'));
+  scope.segments.forEach(function(segment) {
+    html += line(segment.label + ' Premium: ' + strong('\u20B9' + (segment.total_premium_cr/1000).toFixed(1) + 'K Cr') + ' | YoY: ' + fmt(segment.total_growth_pct));
+  });
+  html += line('Penetration: ' + strong((DATA.summary.insurance_penetration_pct || 0) + '%') + ' of GDP | Global avg: ' + strong((DATA.summary.global_penetration_avg_pct || 0) + '%'));
+  scope.segments.forEach(function(segment) {
+    html += heading('Top ' + segment.label + ' Insurers');
+    sortByPremium(segment.insurers).slice(0, 5).forEach(function(i, idx) {
+      html += line((idx + 1) + '. ' + strong(i.name) + ': \u20B9' + (i.premium_cr/1000).toFixed(1) + 'K Cr (' + i.market_share_pct.toFixed(1) + '% share, ' + fmt(i.yoy_growth_pct) + ' YoY)');
+    });
+  });
+  html += '<div style="color:var(--gray);font-size:7px;margin-top:6px;border-top:1px solid var(--border);padding-top:3px;">Generated from source snapshot ' + ((DATA._meta && DATA._meta.research_as_of) || '--') + '. Validation: ' + ((DATA._meta && DATA._meta.validation && DATA._meta.validation.status) || 'unvalidated') + '.</div>';
+  return html;
+}
 function renderBrief() {
-  if (BRIEF_RENDERED) return;
-  BRIEF_RENDERED = true;
   var el = document.getElementById('brief-tab');
   if (!el) return;
-  if (window._briefMd) {
-    // Simple markdown-to-HTML conversion for the brief
-    var html = window._briefMd
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/^### (.+)$/gm, '<div style="color:var(--amber);font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin:6px 0 2px;">$1</div>')
-      .replace(/^## (.+)$/gm, '<div style="color:var(--amber2);font-size:10px;font-weight:700;letter-spacing:1px;margin:8px 0 3px;border-bottom:1px solid var(--border);padding-bottom:2px;">$1</div>')
-      .replace(/^# (.+)$/gm, '<div style="color:var(--amber);font-size:12px;font-weight:700;letter-spacing:2px;margin:8px 0 4px;">$1</div>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--white)">$1</strong>')
-      .replace(/\n\n/g, '</p><p style="margin:4px 0;color:var(--gray2);font-size:9px;">')
-      .replace(/\n/g, '<br>');
-    el.innerHTML = '<p style="margin:0;color:var(--gray2);font-size:9px;">' + html + '</p>';
-  } else {
-    el.innerHTML = '<div style="color:var(--gray2);font-size:9px;padding:12px;text-align:center;">No analysis brief available. Run the multi-agent system to generate one.</div>';
-  }
+  el.innerHTML = '<p style="margin:0;color:var(--gray2);font-size:9px;">' + generateBrief() + '</p>';
 }
 
 // ─── HHI / Concentration Tab ────────────────────────────────────────
 function renderHHI() {
-  var tabKey = currentView + '-hhi';
+  var scope = getActiveAnalysisScope();
+  var tabKey = currentView + '-' + scope.period + '-hhi';
   if (renderedTabs[tabKey]) return;
   renderedTabs[tabKey] = true;
-
-  var life = getLifeLatest();
-  var nonlife = getNonLifeLatest();
+  if (!scope.segments.length) {
+    document.getElementById('hhiContainer').innerHTML = '<div style="color:var(--gray2);font-size:9px;padding:10px;">No concentration data available.</div>';
+    return;
+  }
 
   function calcHHI(insurers) {
     var hhi = 0;
@@ -1052,52 +1447,35 @@ function renderHHI() {
     return { label: 'HIGHLY CONCENTRATED', color: 'var(--red)' };
   }
 
-  var lifeHHI = calcHHI(life.insurers);
-  var nonLifeHHI = calcHHI(nonlife.insurers);
-  var lifeLevel = getConcentrationLevel(lifeHHI);
-  var nonLifeLevel = getConcentrationLevel(nonLifeHHI);
-
   function topContributors(insurers, n) {
-    return insurers.slice().sort(function(a, b) {
+    return sortByPremium(insurers).sort(function(a, b) {
       return b.market_share_pct - a.market_share_pct;
     }).slice(0, n);
   }
 
-  var html =
-    '<div class="insight-grid">' +
-      '<div class="insight-card">' +
-        '<div class="label">LIFE HHI</div>' +
-        '<div class="value" style="color:' + lifeLevel.color + '">' + lifeHHI.toFixed(1) + '</div>' +
-        '<div class="desc">' + lifeLevel.label + '</div>' +
-      '</div>' +
-      '<div class="insight-card">' +
-        '<div class="label">NON-LIFE HHI</div>' +
-        '<div class="value" style="color:' + nonLifeLevel.color + '">' + nonLifeHHI.toFixed(1) + '</div>' +
-        '<div class="desc">' + nonLifeLevel.label + '</div>' +
-      '</div>' +
-    '</div>' +
-    '<div style="margin-bottom:4px;font-size:7px;color:var(--gray2);letter-spacing:0.5px;">Herfindahl-Hirschman Index = sum of squared market shares. &lt;1500 = competitive, 1500-2500 = moderate, &gt;2500 = concentrated.</div>' +
-    '<div class="section-label">TOP CONTRIBUTORS TO LIFE CONCENTRATION</div>';
-
-  var lifeTop = topContributors(life.insurers, 5);
-  lifeTop.forEach(function(i, idx) {
-    html += '<div class="player-row">' +
-      '<span class="player-rank">#' + (idx + 1) + '</span>' +
-      '<span class="player-name">' + i.name.split(' ').slice(0, 2).join(' ') + '</span>' +
-      '<span class="player-share" style="color:var(--green)">' + i.market_share_pct.toFixed(1) + '%</span>' +
-      '<span style="font-size:8px;color:var(--gray)">' + (i.market_share_pct * i.market_share_pct).toFixed(1) + '</span>' +
+  var html = '<div class="section-label">' + scope.label.toUpperCase() + ' · ' + scope.period + '</div><div class="insight-grid">';
+  scope.segments.forEach(function(segment) {
+    var hhi = calcHHI(segment.insurers);
+    var level = getConcentrationLevel(hhi);
+    html += '<div class="insight-card">' +
+      '<div class="label">' + segment.label.toUpperCase() + ' HHI</div>' +
+      '<div class="value" style="color:' + level.color + '">' + hhi.toFixed(1) + '</div>' +
+      '<div class="desc">' + level.label + '</div>' +
     '</div>';
   });
+  html += '</div>' +
+    '<div style="margin-bottom:4px;font-size:7px;color:var(--gray2);letter-spacing:0.5px;">Herfindahl-Hirschman Index = sum of squared market shares. &lt;1500 = competitive, 1500-2500 = moderate, &gt;2500 = concentrated.</div>';
 
-  html += '<div class="section-label" style="margin-top:4px;">TOP CONTRIBUTORS TO NON-LIFE CONCENTRATION</div>';
-  var nonLifeTop = topContributors(nonlife.insurers, 5);
-  nonLifeTop.forEach(function(i, idx) {
-    html += '<div class="player-row">' +
-      '<span class="player-rank">#' + (idx + 1) + '</span>' +
-      '<span class="player-name">' + i.name.split(' ').slice(0, 2).join(' ') + '</span>' +
-      '<span class="player-share" style="color:var(--cyan)">' + i.market_share_pct.toFixed(1) + '%</span>' +
-      '<span style="font-size:8px;color:var(--gray)">' + (i.market_share_pct * i.market_share_pct).toFixed(1) + '</span>' +
-    '</div>';
+  scope.segments.forEach(function(segment) {
+    html += '<div class="section-label">TOP CONTRIBUTORS TO ' + segment.label.toUpperCase() + ' CONCENTRATION</div>';
+    topContributors(segment.insurers, 5).forEach(function(i, idx) {
+      html += '<div class="player-row">' +
+        '<span class="player-rank">#' + (idx + 1) + '</span>' +
+        '<span class="player-name">' + shortName(i.name) + '</span>' +
+        '<span class="player-share" style="color:' + segment.color + '">' + i.market_share_pct.toFixed(1) + '%</span>' +
+        '<span style="font-size:8px;color:var(--gray)">' + (i.market_share_pct * i.market_share_pct).toFixed(1) + '</span>' +
+      '</div>';
+    });
   });
 
   document.getElementById('hhiContainer').innerHTML = html;
@@ -1105,22 +1483,21 @@ function renderHHI() {
 
 // ─── Movers Tab ─────────────────────────────────────────────────────
 function renderMovers() {
-  var tabKey = currentView + '-movers';
+  var scope = getActiveAnalysisScope();
+  var tabKey = currentView + '-' + scope.period + '-movers';
   if (renderedTabs[tabKey]) return;
   renderedTabs[tabKey] = true;
-
-  var life = getLifeLatest();
-  var nonlife = getNonLifeLatest();
-
-  var all = life.insurers.map(function(i) { return Object.assign({}, i, { _seg: 'Life' }); })
-    .concat(nonlife.insurers.map(function(i) { return Object.assign({}, i, { _seg: 'Non-Life' }); }));
-
+  var all = scope.rows.filter(function(i) {
+    return i.yoy_growth_pct !== null && i.yoy_growth_pct !== undefined && Math.abs(i.premium_cr || 0) >= 100;
+  });
   var sorted = all.slice().sort(function(a, b) { return b.yoy_growth_pct - a.yoy_growth_pct; });
 
   var top5 = sorted.slice(0, 5);
   var bottom5 = sorted.slice(-5).reverse();
 
-  var html = '<div class="section-label">TOP 5 — FASTEST GROWING</div>';
+  var html = '<div class="section-label">' + scope.label.toUpperCase() + ' · ' + scope.period + '</div>' +
+    '<div style="font-size:7px;color:var(--gray2);margin-bottom:4px;">Meaningful movers filter: premium base >= \u20B9100 Cr.</div>' +
+    '<div class="section-label">TOP 5 — FASTEST GROWING</div>';
   top5.forEach(function(i, idx) {
     var segColor = i._seg === 'Life' ? 'var(--green)' : 'var(--cyan)';
     html += '<div class="player-row">' +
@@ -1148,6 +1525,8 @@ function renderMovers() {
 // ─── Insights Tab ───────────────────────────────────────────────────
 function renderOverviewInsights(life, nonlife) {
   var total = life.total_premium_cr + nonlife.total_premium_cr;
+  var topLife = sortByPremium(life.insurers)[0];
+  var topNonLife = sortByPremium(nonlife.insurers)[0];
   document.getElementById('insights-tab').innerHTML =
     '<div class="insight-card">' +
       '<div class="label">Total Market Premium</div>' +
@@ -1167,13 +1546,13 @@ function renderOverviewInsights(life, nonlife) {
       '</div>' +
       '<div class="insight-card">' +
         '<div class="label">Top Life Player</div>' +
-        '<div class="value" style="color:var(--green);font-size:10px;">' + life.insurers[0].name.split(' ')[0] + '</div>' +
-        '<div class="desc">' + life.insurers[0].market_share_pct.toFixed(1) + '% market share</div>' +
+        '<div class="value" style="color:var(--green);font-size:10px;">' + (topLife ? shortName(topLife.name) : '--') + '</div>' +
+        '<div class="desc">' + (topLife ? topLife.market_share_pct.toFixed(1) + '% market share' : '--') + '</div>' +
       '</div>' +
       '<div class="insight-card">' +
         '<div class="label">Top Non-Life Player</div>' +
-        '<div class="value" style="color:var(--cyan);font-size:10px;">' + nonlife.insurers[0].name.split(' ')[0] + '</div>' +
-        '<div class="desc">' + nonlife.insurers[0].market_share_pct.toFixed(1) + '% market share</div>' +
+        '<div class="value" style="color:var(--cyan);font-size:10px;">' + (topNonLife ? shortName(topNonLife.name) : '--') + '</div>' +
+        '<div class="desc">' + (topNonLife ? topNonLife.market_share_pct.toFixed(1) + '% market share' : '--') + '</div>' +
       '</div>' +
     '</div>' +
     '<div class="insight-card" style="margin-top:4px;">' +
@@ -1185,12 +1564,17 @@ function renderOverviewInsights(life, nonlife) {
 
 function renderSegmentInsights(latest, segment) {
   var color = segment === 'life' ? 'var(--green)' : 'var(--cyan)';
+  var sorted = sortByPremium(latest.insurers);
   var total = latest.insurers.reduce(function(s, i) { return s + i.premium_cr; }, 0);
-  var top3Share = latest.insurers.slice(0, 3).reduce(function(s, i) { return s + i.market_share_pct; }, 0);
+  var top3Share = sorted.slice(0, 3).reduce(function(s, i) { return s + i.market_share_pct; }, 0);
+  var top = sorted[0];
+  var topName = top ? shortName(top.name) : '--';
+  var topShare = top ? top.market_share_pct.toFixed(1) + '% share' : '--';
+  var growthLeaders = latest.insurers.filter(function(i) { return i.yoy_growth_pct > 10 && i.premium_cr >= 100; }).length;
 
   document.getElementById('insights-tab').innerHTML =
     '<div class="insight-card">' +
-      '<div class="label">Total ' + segment.toUpperCase() + ' Premium</div>' +
+      '<div class="label">Total ' + segmentDisplayLabel(segment).toUpperCase() + ' Premium</div>' +
       '<div class="value" style="color:' + color + '">' + fmtCr(latest.total_premium_cr) + '</div>' +
       '<div class="desc">YoY: ' + fmtPct(latest.total_growth_pct) + '</div>' +
     '</div>' +
@@ -1207,12 +1591,12 @@ function renderSegmentInsights(latest, segment) {
       '</div>' +
       '<div class="insight-card">' +
         '<div class="label">Top Player</div>' +
-        '<div class="value" style="color:' + color + ';font-size:10px;">' + latest.insurers[0].name.split(' ')[0] + '</div>' +
-        '<div class="desc">' + latest.insurers[0].market_share_pct.toFixed(1) + '% share</div>' +
+        '<div class="value" style="color:' + color + ';font-size:10px;">' + topName + '</div>' +
+        '<div class="desc">' + topShare + '</div>' +
       '</div>' +
       '<div class="insight-card">' +
         '<div class="label">Growth Leaders</div>' +
-        '<div class="value" style="color:var(--green);font-size:9px;">' + latest.insurers.slice(0, 5).filter(function(i) { return i.yoy_growth_pct > 10; }).length + '</div>' +
+        '<div class="value" style="color:var(--green);font-size:9px;">' + growthLeaders + '</div>' +
         '<div class="desc">Growing >10% YoY</div>' +
       '</div>' +
     '</div>';
@@ -1244,6 +1628,8 @@ function renderCompareInsights(life, nonlife) {
 
 // ─── Top Players Tab ────────────────────────────────────────────────
 function renderPlayers(lifeTop, nonlifeTop) {
+  if (!lifeTop) lifeTop = [];
+  if (!nonlifeTop) nonlifeTop = [];
   var html = '<div class="section-label">LIFE INSURANCE — TOP 8</div>';
   lifeTop.forEach(function(i, idx) {
     html += '<div class="player-row">' +

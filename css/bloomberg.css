@@ -97,8 +97,10 @@ html, body {
   color: var(--amber);
   font-family: var(--mono);
   font-size: var(--fs-md);
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
   user-select: none;
 }
 
@@ -122,8 +124,9 @@ body::after {
 .terminal {
   display: grid;
   grid-template-rows: 28px 24px 32px 1fr 26px;
-  height: 100vh;
-  width: 100vw;
+  min-height: 100vh;
+  height: 100%;
+  width: 100%;
 }
 
 /* ─── TOP BAR ──────────────────────────────────────────── */
@@ -437,6 +440,11 @@ body::after {
 
 .tabulator-col-title { padding: 3px 4px !important; }
 
+.tabulator-table {
+  background: transparent !important;
+  color: var(--white) !important;
+}
+
 .tabulator-row {
   background: transparent !important;
   border-bottom: 1px solid rgba(30,32,48,0.4) !important;
@@ -453,6 +461,10 @@ body::after {
 
 .tabulator-row .tabulator-cell:first-child { color: var(--cyan) !important; font-weight: 600; }
 .tabulator-row .tabulator-cell:nth-child(2) { color: var(--white) !important; }
+
+.tabulator-row .tabulator-col-resize-handle {
+  pointer-events: none;
+}
 
 .tabulator-header-filter input {
   background: var(--bg4) !important;
@@ -649,10 +661,19 @@ body::after {
 .popup-content {
   background: var(--bg2);
   border: 1px solid var(--amber-dim);
-  width: 400px;
+  width: min(420px, calc(100vw - 16px));
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 520px) {
+  .audit-grid { grid-template-columns: 1fr; }
+  .audit-row,
+  .audit-issue {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
 }
 
 .popup-header {
@@ -682,6 +703,66 @@ body::after {
   font-size: var(--fs-xs);
   color: var(--white);
   line-height: 1.6;
+}
+
+.topbar-status {
+  cursor: pointer;
+}
+
+.topbar-status:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.audit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.audit-card {
+  background: linear-gradient(180deg, rgba(20,22,32,0.95), rgba(11,13,18,0.95));
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  min-width: 0;
+}
+
+.audit-card .label,
+.audit-card .desc {
+  color: var(--gray2);
+  font-size: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.audit-card .value {
+  margin: 2px 0;
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.audit-row,
+.audit-issue,
+.audit-note {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 8px;
+  padding: 4px 6px;
+  border-bottom: 1px solid rgba(30,32,48,0.6);
+  font-size: 8px;
+}
+
+.audit-issue {
+  grid-template-columns: 58px 86px 1fr;
+}
+
+.audit-note {
+  display: block;
+  color: var(--gray2);
+  overflow-wrap: anywhere;
 }
 
 /* ─── MISC ─────────────────────────────────────────────── */
@@ -747,11 +828,14 @@ body::after {
   .kpi-value { font-size: 11px; }
   .nav-tab { padding: 0 6px; font-size: 8px; }
   .nav-tab .fkey { display: none; }
+  .main-grid { grid-template-columns: 1fr; grid-template-rows: auto 1fr 1fr; }
+  .panel-left { grid-row: auto; border-right: none; max-height: 50vh; }
+  .panel-body { overflow-y: auto; -webkit-overflow-scrolling: touch; }
 }
 
 @media (max-width: 800px) {
   .terminal { grid-template-rows: 24px 22px 28px 1fr 26px; }
-  .main-grid { grid-template-columns: 1fr; grid-template-rows: auto 1fr 1fr; }
+  .main-grid { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
   .panel-left { grid-row: auto; border-right: none; max-height: 45vh; }
   .kpi-item { padding: 2px 4px; }
   .kpi-value { font-size: 10px; }
@@ -763,13 +847,20 @@ body::after {
   .topbar-right { gap: 4px; padding: 0 4px; }
   body.loading #tableContainer { min-height: 120px; }
   .chart-area { min-height: 60px; }
+  .chart-meta { gap: 6px; font-size: 7px; }
+  .insight-grid { grid-template-columns: 1fr; }
+  #tableContainer { overflow-x: auto; }
 }
 
 @media (max-width: 500px) {
+  .terminal { grid-template-rows: 22px 20px auto 1fr 26px; }
   .kpi-strip { flex-wrap: wrap; height: auto; }
   .kpi-item { flex: 1 1 45%; min-width: 80px; }
   .nav-tab { padding: 0 4px; font-size: 7px; letter-spacing: 0; }
   .chart-controls { flex-wrap: wrap; gap: 1px; }
   .tf-btn { font-size: 7px; padding: 1px 4px; }
   .month-select { font-size: 7px; max-width: 80px; }
+  .command-bar { flex-wrap: wrap; padding: 2px 4px; }
+  .cmd-status { font-size: 7px; }
+  .ticker-scroll { animation-duration: 180s; }
 }

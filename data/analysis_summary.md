@@ -1,22 +1,28 @@
 # IRDAI Market Analysis Summary
 
 ## Market Overview
-- Total Market Premium: ₹123.2K Cr
+- Comparable Month: 2026-05
+- Total Comparable Premium: ₹123.2K Cr
 - Life Premium: ₹62.6K Cr
 - Non-Life Premium: ₹60.6K Cr
 - Insurance Penetration: 3.8%
 - Insurance Density: $92
 
-## Top Life Insurers (Latest Month)
-1. Acko Life Insurance Limited: ₹0.0K Cr (0.1% share, +212.0% YoY)
-2. Aditya Birla Sun Life Insurance Company Limited: ₹1.2K Cr (1.9% share, +33.2% YoY)
-3. Ageas Federal Life Insurance Company Limited: ₹0.2K Cr (0.3% share, +31.7% YoY)
-4. Aviva Life Insurance Company India Limited: ₹0.1K Cr (0.1% share, +21.7% YoY)
+## Top Life Insurers (Latest Life Month: 2026-05)
+1. Life Insurance Corporation of India: ₹37.8K Cr (60.4% share, +18.1% YoY)
+2. SBI Life Insurance Company Limited: ₹5.7K Cr (9.1% share, +22.9% YoY)
+3. HDFC Life Insurance Company Limited: ₹5.1K Cr (8.2% share, +2.9% YoY)
+4. ICICI Prudential Life Insurance Company Limited: ₹2.9K Cr (4.6% share, +18.9% YoY)
 5. Bajaj Allianz Life Insurance Company Limited: ₹2.2K Cr (3.5% share, +48.4% YoY)
 
-## Top Non-Life Insurers (Latest Month)
-1. Acko General Insurance: ₹0.5K Cr (0.8% share, +36.0% YoY)
-2. Bajaj Allianz General Insurance: ₹4.0K Cr (6.6% share, +7.6% YoY)
-3. Cholamandalam MS General Insurance: ₹1.3K Cr (2.2% share, +3.5% YoY)
-4. General Central Insurance: ₹0.8K Cr (1.4% share, -13.3% YoY)
-5. Go Digit General Insurance: ₹1.7K Cr (2.9% share, -2.2% YoY)
+## Top Non-Life Insurers (Latest Non-Life Month: 2026-06)
+1. New India Assurance: ₹12.7K Cr (14.5% share, +3.3% YoY)
+2. ICICI Lombard General Insurance: ₹8.3K Cr (9.5% share, +7.5% YoY)
+3. Tata AIG General Insurance: ₹6.6K Cr (7.5% share, +34.2% YoY)
+4. Oriental Insurance: ₹6.2K Cr (7.1% share, +6.9% YoY)
+5. Bajaj Allianz General Insurance: ₹5.8K Cr (6.6% share, +11.6% YoY)
+
+## Data Caveats
+- Figures are provisional and unaudited where source flash reports say so.
+- Cumulative YTD figures reset at fiscal-year boundaries; avoid reading fiscal resets as market collapses.
+- Validation warnings are stored in data/irdai-processed.json under _meta.validation.

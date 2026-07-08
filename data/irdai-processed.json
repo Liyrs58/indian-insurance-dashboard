@@ -1,1710 +1,2332 @@
 {
   "_meta": {
     "source": "IRDAI Flash Figures",
+    "generated_at": "2026-07-08 08:43:54",
     "last_updated": "2026-07-08",
+    "research_as_of": "2026-07-07",
     "months_available": [
       "2025-12",
       "2026-01",
       "2026-02",
       "2026-03",
+      "2026-05",
+      "2026-06"
+    ],
+    "shared_months": [
+      "2026-02",
+      "2026-03",
       "2026-05"
     ],
-    "notes": "Data extracted from IRDAI flash figures Excel files"
+    "latest_shared_month": "2026-05",
+    "latest_life_month": "2026-05",
+    "latest_non_life_month": "2026-06",
+    "source_links": [
+      {
+        "name": "General Insurance Council Flash Figures",
+        "url": "https://www.gicouncil.in/statistics/industry-statistics/flash-figures/",
+        "latest_observed": "Flash Figures June 2026, published Tuesday 07 July, 2026"
+      },
+      {
+        "name": "IRDAI Reports & Statistics - Monthly business figures",
+        "url": "https://irdai.gov.in/non-life",
+        "latest_observed": "IRDAI monthly business figures archive"
+      },
+      {
+        "name": "Life Insurance Council - New Business Performance",
+        "url": "https://www.lifeinscouncil.org/industry%20information/nbp.aspx",
+        "latest_observed": "Life council archive page available; local raw files currently through May 2026"
+      }
+    ],
+    "validation": {
+      "status": "warning",
+      "issue_count": 20,
+      "issues": [
+        {
+          "severity": "warning",
+          "code": "large_period_drop",
+          "message": "life premium drops more than 50%; likely fiscal-year reset or mixed basis",
+          "segment": "life",
+          "from_month": "2026-03",
+          "to_month": "2026-05",
+          "from_value": 459713.41,
+          "to_value": 62581.22
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Galaxy Health Insurance has extreme YoY growth in non_life 2025-12",
+          "segment": "non_life",
+          "month": "2025-12",
+          "insurer": "Galaxy Health Insurance",
+          "yoy_growth_pct": 3086.33
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Narayana Health Insurance has extreme YoY growth in non_life 2025-12",
+          "segment": "non_life",
+          "month": "2025-12",
+          "insurer": "Narayana Health Insurance",
+          "yoy_growth_pct": 3588.69
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Galaxy Health Insurance has extreme YoY growth in non_life 2026-01",
+          "segment": "non_life",
+          "month": "2026-01",
+          "insurer": "Galaxy Health Insurance",
+          "yoy_growth_pct": 1752.08
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Narayana Health Insurance has extreme YoY growth in non_life 2026-01",
+          "segment": "non_life",
+          "month": "2026-01",
+          "insurer": "Narayana Health Insurance",
+          "yoy_growth_pct": 2071.24
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Galaxy Health Insurance has extreme YoY growth in non_life 2026-02",
+          "segment": "non_life",
+          "month": "2026-02",
+          "insurer": "Galaxy Health Insurance",
+          "yoy_growth_pct": 1080.03
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Narayana Health Insurance has extreme YoY growth in non_life 2026-02",
+          "segment": "non_life",
+          "month": "2026-02",
+          "insurer": "Narayana Health Insurance",
+          "yoy_growth_pct": 1439.45
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Galaxy Health Insurance has extreme YoY growth in non_life 2026-03",
+          "segment": "non_life",
+          "month": "2026-03",
+          "insurer": "Galaxy Health Insurance",
+          "yoy_growth_pct": 774.23
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Narayana Health Insurance has extreme YoY growth in non_life 2026-03",
+          "segment": "non_life",
+          "month": "2026-03",
+          "insurer": "Narayana Health Insurance",
+          "yoy_growth_pct": 1743.77
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Galaxy Health Insurance has extreme YoY growth in non_life 2026-05",
+          "segment": "non_life",
+          "month": "2026-05",
+          "insurer": "Galaxy Health Insurance",
+          "yoy_growth_pct": 320.21
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Narayana Health Insurance has extreme YoY growth in non_life 2026-05",
+          "segment": "non_life",
+          "month": "2026-05",
+          "insurer": "Narayana Health Insurance",
+          "yoy_growth_pct": 1665.14
+        },
+        {
+          "severity": "warning",
+          "code": "negative_value",
+          "message": "Agriculture Insurance Company of India has a negative premium/share in non_life 2026-05",
+          "segment": "non_life",
+          "month": "2026-05",
+          "insurer": "Agriculture Insurance Company of India",
+          "premium_cr": -89.56,
+          "market_share_pct": -0.15
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Agriculture Insurance Company of India has extreme YoY growth in non_life 2026-05",
+          "segment": "non_life",
+          "month": "2026-05",
+          "insurer": "Agriculture Insurance Company of India",
+          "yoy_growth_pct": -421.23
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Galaxy Health Insurance has extreme YoY growth in non_life 2026-06",
+          "segment": "non_life",
+          "month": "2026-06",
+          "insurer": "Galaxy Health Insurance",
+          "yoy_growth_pct": 398.6
+        },
+        {
+          "severity": "info",
+          "code": "extreme_growth",
+          "message": "Narayana Health Insurance has extreme YoY growth in non_life 2026-06",
+          "segment": "non_life",
+          "month": "2026-06",
+          "insurer": "Narayana Health Insurance",
+          "yoy_growth_pct": 1421.5
+        },
+        {
+          "severity": "warning",
+          "code": "negative_value",
+          "message": "Agriculture Insurance Company of India has a negative premium/share in non_life 2026-06",
+          "segment": "non_life",
+          "month": "2026-06",
+          "insurer": "Agriculture Insurance Company of India",
+          "premium_cr": -147.32,
+          "market_share_pct": -0.17
+        },
+        {
+          "severity": "warning",
+          "code": "large_period_drop",
+          "message": "non_life premium drops more than 50%; likely fiscal-year reset or mixed basis",
+          "segment": "non_life",
+          "from_month": "2026-03",
+          "to_month": "2026-05",
+          "from_value": 335918.07,
+          "to_value": 60594.06
+        },
+        {
+          "severity": "info",
+          "code": "missing_companion_month",
+          "message": "Non-life has 2025-12, but life data is unavailable",
+          "month": "2025-12",
+          "missing_segment": "life"
+        },
+        {
+          "severity": "info",
+          "code": "missing_companion_month",
+          "message": "Non-life has 2026-01, but life data is unavailable",
+          "month": "2026-01",
+          "missing_segment": "life"
+        },
+        {
+          "severity": "info",
+          "code": "missing_companion_month",
+          "message": "Non-life has 2026-06, but life data is unavailable",
+          "month": "2026-06",
+          "missing_segment": "life"
+        }
+      ]
+    },
+    "notes": "Data extracted from local IRDAI/GIC flash source files. Headline market totals use the latest shared life/non-life month only."
   },
   "non_life": {
     "monthly_data": [
       {
         "month": "2025-12",
+        "month_label": "Dec 2025",
+        "fiscal_year": "FY2025-26",
+        "period_type": "cumulative_ytd",
+        "source_file": "NonLife_GDP_Dec2025.xlsx",
+        "generated_at": "2026-07-08 08:43:54",
         "insurers": [
-          {
-            "name": "Acko General Insurance",
-            "premium_cr": 1888.62,
-            "market_share_pct": 0.76,
-            "yoy_growth_pct": 21.38
-          },
-          {
-            "name": "Bajaj Allianz General Insurance",
-            "premium_cr": 18879.15,
-            "market_share_pct": 7.55,
-            "yoy_growth_pct": 10.32
-          },
-          {
-            "name": "Cholamandalam MS General Insurance",
-            "premium_cr": 5713.93,
-            "market_share_pct": 2.29,
-            "yoy_growth_pct": -6.25
-          },
-          {
-            "name": "General Central Insurance",
-            "premium_cr": 3764.29,
-            "market_share_pct": 1.51,
-            "yoy_growth_pct": 1.28
-          },
-          {
-            "name": "Go Digit General Insurance",
-            "premium_cr": 7443.92,
-            "market_share_pct": 2.98,
-            "yoy_growth_pct": 14.68
-          },
-          {
-            "name": "HDFC ERGO General Insurance",
-            "premium_cr": 10980.22,
-            "market_share_pct": 4.39,
-            "yoy_growth_pct": -10.09
-          },
-          {
-            "name": "ICICI Lombard General Insurance",
-            "premium_cr": 21372.24,
-            "market_share_pct": 8.55,
-            "yoy_growth_pct": 3.63
-          },
-          {
-            "name": "IFFCO-Tokio General Insurance",
-            "premium_cr": 6606.49,
-            "market_share_pct": 2.64,
-            "yoy_growth_pct": 4.69
-          },
-          {
-            "name": "Kshema General Insurance",
-            "premium_cr": 527.89,
-            "market_share_pct": 0.21,
-            "yoy_growth_pct": -26.2
-          },
-          {
-            "name": "Liberty General Insurance",
-            "premium_cr": 2071.88,
-            "market_share_pct": 0.83,
-            "yoy_growth_pct": 21.79
-          },
-          {
-            "name": "Magma General Insurance",
-            "premium_cr": 2517.23,
-            "market_share_pct": 1.01,
-            "yoy_growth_pct": 12.61
-          },
-          {
-            "name": "National Insurance Company",
-            "premium_cr": 13717.35,
-            "market_share_pct": 5.49,
-            "yoy_growth_pct": 6.47
-          },
-          {
-            "name": "Navi General Insurance",
-            "premium_cr": 83.2,
-            "market_share_pct": 0.03,
-            "yoy_growth_pct": 98.93
-          },
-          {
-            "name": "Raheja QBE General Insurance",
-            "premium_cr": 186.47,
-            "market_share_pct": 0.07,
-            "yoy_growth_pct": -40.12
-          },
-          {
-            "name": "Reliance General Insurance",
-            "premium_cr": 9764.15,
-            "market_share_pct": 3.91,
-            "yoy_growth_pct": -4.97
-          },
-          {
-            "name": "Royal Sundaram General Insurance",
-            "premium_cr": 3178.01,
-            "market_share_pct": 1.27,
-            "yoy_growth_pct": 12.77
-          },
-          {
-            "name": "SBI General Insurance",
-            "premium_cr": 10768.59,
-            "market_share_pct": 4.31,
-            "yoy_growth_pct": 14.51
-          },
-          {
-            "name": "Shriram General Insurance",
-            "premium_cr": 3303.85,
-            "market_share_pct": 1.32,
-            "yoy_growth_pct": 24.47
-          },
-          {
-            "name": "Tata AIG General Insurance",
-            "premium_cr": 14984.87,
-            "market_share_pct": 6.0,
-            "yoy_growth_pct": 13.12
-          },
           {
             "name": "New India Assurance",
             "premium_cr": 33505.9,
+            "prior_premium_cr": 29452.9,
             "market_share_pct": 13.41,
             "yoy_growth_pct": 13.76
           },
           {
+            "name": "ICICI Lombard General Insurance",
+            "premium_cr": 21372.24,
+            "prior_premium_cr": 20622.82,
+            "market_share_pct": 8.55,
+            "yoy_growth_pct": 3.63
+          },
+          {
+            "name": "Bajaj Allianz General Insurance",
+            "premium_cr": 18879.15,
+            "prior_premium_cr": 17112.45,
+            "market_share_pct": 7.55,
+            "yoy_growth_pct": 10.32
+          },
+          {
             "name": "Oriental Insurance",
             "premium_cr": 16235.45,
+            "prior_premium_cr": 14934.78,
             "market_share_pct": 6.5,
             "yoy_growth_pct": 8.71
           },
           {
             "name": "United India Insurance",
             "premium_cr": 15339.97,
+            "prior_premium_cr": 14304.69,
             "market_share_pct": 6.14,
             "yoy_growth_pct": 7.24
           },
           {
-            "name": "Universal Sompo General Insurance",
-            "premium_cr": 4435.85,
-            "market_share_pct": 1.77,
-            "yoy_growth_pct": 10.3
+            "name": "Tata AIG General Insurance",
+            "premium_cr": 14984.87,
+            "prior_premium_cr": 13246.78,
+            "market_share_pct": 6.0,
+            "yoy_growth_pct": 13.12
           },
           {
-            "name": "Zuno General Insurance",
-            "premium_cr": 856.83,
-            "market_share_pct": 0.34,
-            "yoy_growth_pct": 16.32
-          },
-          {
-            "name": "Zurich Kotak General Insurance",
-            "premium_cr": 1530.42,
-            "market_share_pct": 0.61,
-            "yoy_growth_pct": 9.27
-          },
-          {
-            "name": "Aditya Birla Health Insurance",
-            "premium_cr": 4418.17,
-            "market_share_pct": 1.77,
-            "yoy_growth_pct": 37.27
-          },
-          {
-            "name": "Care Health Insurance",
-            "premium_cr": 6878.92,
-            "market_share_pct": 2.75,
-            "yoy_growth_pct": 14.71
-          },
-          {
-            "name": "ManipalCigna Health Insurance",
-            "premium_cr": 1545.42,
-            "market_share_pct": 0.62,
-            "yoy_growth_pct": 27.75
-          },
-          {
-            "name": "Niva Bupa Health Insurance",
-            "premium_cr": 5706.25,
-            "market_share_pct": 2.28,
-            "yoy_growth_pct": 21.84
+            "name": "National Insurance Company",
+            "premium_cr": 13717.35,
+            "prior_premium_cr": 12883.8,
+            "market_share_pct": 5.49,
+            "yoy_growth_pct": 6.47
           },
           {
             "name": "Star Health & Allied Insurance",
             "premium_cr": 12638.52,
+            "prior_premium_cr": 11603.14,
             "market_share_pct": 5.06,
             "yoy_growth_pct": 8.92
           },
           {
-            "name": "Narayana Health Insurance",
-            "premium_cr": 23.98,
-            "market_share_pct": 0.01,
-            "yoy_growth_pct": 3588.69
+            "name": "HDFC ERGO General Insurance",
+            "premium_cr": 10980.22,
+            "prior_premium_cr": 12211.91,
+            "market_share_pct": 4.39,
+            "yoy_growth_pct": -10.09
           },
           {
-            "name": "Galaxy Health Insurance",
-            "premium_cr": 75.84,
-            "market_share_pct": 0.03,
-            "yoy_growth_pct": 3086.33
+            "name": "SBI General Insurance",
+            "premium_cr": 10768.59,
+            "prior_premium_cr": 9404.37,
+            "market_share_pct": 4.31,
+            "yoy_growth_pct": 14.51
+          },
+          {
+            "name": "Reliance General Insurance",
+            "premium_cr": 9764.15,
+            "prior_premium_cr": 10274.95,
+            "market_share_pct": 3.91,
+            "yoy_growth_pct": -4.97
           },
           {
             "name": "Agriculture Insurance Company of India",
             "premium_cr": 7977.07,
+            "prior_premium_cr": 7222.23,
             "market_share_pct": 3.19,
             "yoy_growth_pct": 10.45
           },
           {
-            "name": "ECGC Limited",
-            "premium_cr": 1024.05,
-            "market_share_pct": 0.41,
-            "yoy_growth_pct": 7.06
-          }
-        ],
-        "total_premium_cr": 249944.96,
-        "total_growth_pct": 10.54
-      },
-      {
-        "month": "2026-01",
-        "insurers": [
-          {
-            "name": "Acko General Insurance",
-            "premium_cr": 2150.31,
-            "market_share_pct": 0.76,
-            "yoy_growth_pct": 23.58
-          },
-          {
-            "name": "Bajaj Allianz General Insurance",
-            "premium_cr": 20700.2,
-            "market_share_pct": 7.31,
-            "yoy_growth_pct": 10.18
-          },
-          {
-            "name": "Cholamandalam MS General Insurance",
-            "premium_cr": 6449.93,
-            "market_share_pct": 2.28,
-            "yoy_growth_pct": -5.55
-          },
-          {
-            "name": "General Central Insurance",
-            "premium_cr": 4470.29,
-            "market_share_pct": 1.58,
-            "yoy_growth_pct": -0.92
-          },
-          {
             "name": "Go Digit General Insurance",
-            "premium_cr": 8416.48,
-            "market_share_pct": 2.97,
-            "yoy_growth_pct": 16.61
+            "premium_cr": 7443.92,
+            "prior_premium_cr": 6491.19,
+            "market_share_pct": 2.98,
+            "yoy_growth_pct": 14.68
           },
           {
-            "name": "HDFC ERGO General Insurance",
-            "premium_cr": 12270.93,
-            "market_share_pct": 4.33,
-            "yoy_growth_pct": -7.7
-          },
-          {
-            "name": "ICICI Lombard General Insurance",
-            "premium_cr": 24349.83,
-            "market_share_pct": 8.6,
-            "yoy_growth_pct": 5.03
+            "name": "Care Health Insurance",
+            "premium_cr": 6878.92,
+            "prior_premium_cr": 5996.67,
+            "market_share_pct": 2.75,
+            "yoy_growth_pct": 14.71
           },
           {
             "name": "IFFCO-Tokio General Insurance",
-            "premium_cr": 7452.04,
-            "market_share_pct": 2.63,
-            "yoy_growth_pct": 4.82
+            "premium_cr": 6606.49,
+            "prior_premium_cr": 6310.75,
+            "market_share_pct": 2.64,
+            "yoy_growth_pct": 4.69
           },
           {
-            "name": "Kshema General Insurance",
-            "premium_cr": 653.39,
-            "market_share_pct": 0.23,
-            "yoy_growth_pct": -11.06
+            "name": "Cholamandalam MS General Insurance",
+            "premium_cr": 5713.93,
+            "prior_premium_cr": 6095.16,
+            "market_share_pct": 2.29,
+            "yoy_growth_pct": -6.25
           },
           {
-            "name": "Liberty General Insurance",
-            "premium_cr": 2344.4,
-            "market_share_pct": 0.83,
-            "yoy_growth_pct": 22.01
+            "name": "Niva Bupa Health Insurance",
+            "premium_cr": 5706.25,
+            "prior_premium_cr": 4683.58,
+            "market_share_pct": 2.28,
+            "yoy_growth_pct": 21.84
           },
           {
-            "name": "Magma General Insurance",
-            "premium_cr": 3023.31,
-            "market_share_pct": 1.07,
-            "yoy_growth_pct": 11.96
+            "name": "Universal Sompo General Insurance",
+            "premium_cr": 4435.85,
+            "prior_premium_cr": 4021.54,
+            "market_share_pct": 1.77,
+            "yoy_growth_pct": 10.3
           },
           {
-            "name": "National Insurance Company",
-            "premium_cr": 14991.26,
-            "market_share_pct": 5.29,
-            "yoy_growth_pct": 6.42
+            "name": "Aditya Birla Health Insurance",
+            "premium_cr": 4418.17,
+            "prior_premium_cr": 3218.56,
+            "market_share_pct": 1.77,
+            "yoy_growth_pct": 37.27
           },
           {
-            "name": "Navi General Insurance",
-            "premium_cr": 102.98,
-            "market_share_pct": 0.04,
-            "yoy_growth_pct": 107.82
-          },
-          {
-            "name": "Raheja QBE General Insurance",
-            "premium_cr": 314.34,
-            "market_share_pct": 0.11,
-            "yoy_growth_pct": -4.06
-          },
-          {
-            "name": "Reliance General Insurance",
-            "premium_cr": 10681.8,
-            "market_share_pct": 3.77,
-            "yoy_growth_pct": -4.27
-          },
-          {
-            "name": "Royal Sundaram General Insurance",
-            "premium_cr": 3653.4,
-            "market_share_pct": 1.29,
-            "yoy_growth_pct": 14.36
-          },
-          {
-            "name": "SBI General Insurance",
-            "premium_cr": 12801.79,
-            "market_share_pct": 4.52,
-            "yoy_growth_pct": 14.96
+            "name": "General Central Insurance",
+            "premium_cr": 3764.29,
+            "prior_premium_cr": 3716.76,
+            "market_share_pct": 1.51,
+            "yoy_growth_pct": 1.28
           },
           {
             "name": "Shriram General Insurance",
-            "premium_cr": 3745.02,
+            "premium_cr": 3303.85,
+            "prior_premium_cr": 2654.28,
             "market_share_pct": 1.32,
-            "yoy_growth_pct": 24.01
+            "yoy_growth_pct": 24.47
           },
           {
-            "name": "Tata AIG General Insurance",
-            "premium_cr": 16708.87,
-            "market_share_pct": 5.9,
-            "yoy_growth_pct": 12.85
+            "name": "Royal Sundaram General Insurance",
+            "premium_cr": 3178.01,
+            "prior_premium_cr": 2818.12,
+            "market_share_pct": 1.27,
+            "yoy_growth_pct": 12.77
           },
+          {
+            "name": "Magma General Insurance",
+            "premium_cr": 2517.23,
+            "prior_premium_cr": 2235.33,
+            "market_share_pct": 1.01,
+            "yoy_growth_pct": 12.61
+          },
+          {
+            "name": "Liberty General Insurance",
+            "premium_cr": 2071.88,
+            "prior_premium_cr": 1701.18,
+            "market_share_pct": 0.83,
+            "yoy_growth_pct": 21.79
+          },
+          {
+            "name": "Acko General Insurance",
+            "premium_cr": 1888.62,
+            "prior_premium_cr": 1555.96,
+            "market_share_pct": 0.76,
+            "yoy_growth_pct": 21.38
+          },
+          {
+            "name": "ManipalCigna Health Insurance",
+            "premium_cr": 1545.42,
+            "prior_premium_cr": 1209.68,
+            "market_share_pct": 0.62,
+            "yoy_growth_pct": 27.75
+          },
+          {
+            "name": "Zurich Kotak General Insurance",
+            "premium_cr": 1530.42,
+            "prior_premium_cr": 1400.59,
+            "market_share_pct": 0.61,
+            "yoy_growth_pct": 9.27
+          },
+          {
+            "name": "ECGC Limited",
+            "premium_cr": 1024.05,
+            "prior_premium_cr": 956.49,
+            "market_share_pct": 0.41,
+            "yoy_growth_pct": 7.06
+          },
+          {
+            "name": "Zuno General Insurance",
+            "premium_cr": 856.83,
+            "prior_premium_cr": 736.59,
+            "market_share_pct": 0.34,
+            "yoy_growth_pct": 16.32
+          },
+          {
+            "name": "Kshema General Insurance",
+            "premium_cr": 527.89,
+            "prior_premium_cr": 715.31,
+            "market_share_pct": 0.21,
+            "yoy_growth_pct": -26.2
+          },
+          {
+            "name": "Raheja QBE General Insurance",
+            "premium_cr": 186.47,
+            "prior_premium_cr": 311.43,
+            "market_share_pct": 0.07,
+            "yoy_growth_pct": -40.12
+          },
+          {
+            "name": "Navi General Insurance",
+            "premium_cr": 83.2,
+            "prior_premium_cr": 41.83,
+            "market_share_pct": 0.03,
+            "yoy_growth_pct": 98.93
+          },
+          {
+            "name": "Galaxy Health Insurance",
+            "premium_cr": 75.84,
+            "prior_premium_cr": 2.38,
+            "market_share_pct": 0.03,
+            "yoy_growth_pct": 3086.33
+          },
+          {
+            "name": "Narayana Health Insurance",
+            "premium_cr": 23.98,
+            "prior_premium_cr": 0.65,
+            "market_share_pct": 0.01,
+            "yoy_growth_pct": 3588.69
+          }
+        ],
+        "total_premium_cr": 249944.96,
+        "total_growth_pct": 8.6,
+        "filename_month": "2025-12",
+        "month_source": "filename"
+      },
+      {
+        "month": "2026-01",
+        "month_label": "Jan 2026",
+        "fiscal_year": "FY2025-26",
+        "period_type": "cumulative_ytd",
+        "source_file": "NonLife_GDP_Jan2026.xlsx",
+        "generated_at": "2026-07-08 08:43:54",
+        "insurers": [
           {
             "name": "New India Assurance",
             "premium_cr": 37023.96,
+            "prior_premium_cr": 33240.44,
             "market_share_pct": 13.07,
             "yoy_growth_pct": 11.38
           },
           {
-            "name": "Oriental Insurance",
-            "premium_cr": 17782.04,
-            "market_share_pct": 6.28,
-            "yoy_growth_pct": 6.46
+            "name": "ICICI Lombard General Insurance",
+            "premium_cr": 24349.83,
+            "prior_premium_cr": 23184.15,
+            "market_share_pct": 8.6,
+            "yoy_growth_pct": 5.03
+          },
+          {
+            "name": "Bajaj Allianz General Insurance",
+            "premium_cr": 20700.2,
+            "prior_premium_cr": 18787.26,
+            "market_share_pct": 7.31,
+            "yoy_growth_pct": 10.18
           },
           {
             "name": "United India Insurance",
             "premium_cr": 18027.41,
+            "prior_premium_cr": 16703.01,
             "market_share_pct": 6.37,
             "yoy_growth_pct": 7.93
           },
           {
-            "name": "Universal Sompo General Insurance",
-            "premium_cr": 5105.66,
-            "market_share_pct": 1.8,
-            "yoy_growth_pct": 14.74
+            "name": "Oriental Insurance",
+            "premium_cr": 17782.04,
+            "prior_premium_cr": 16703.03,
+            "market_share_pct": 6.28,
+            "yoy_growth_pct": 6.46
           },
           {
-            "name": "Zuno General Insurance",
-            "premium_cr": 990.65,
-            "market_share_pct": 0.35,
-            "yoy_growth_pct": 19.35
+            "name": "Tata AIG General Insurance",
+            "premium_cr": 16708.87,
+            "prior_premium_cr": 14806.78,
+            "market_share_pct": 5.9,
+            "yoy_growth_pct": 12.85
           },
           {
-            "name": "Zurich Kotak General Insurance",
-            "premium_cr": 1875.47,
-            "market_share_pct": 0.66,
-            "yoy_growth_pct": 19.53
-          },
-          {
-            "name": "Aditya Birla Health Insurance",
-            "premium_cr": 5032.0,
-            "market_share_pct": 1.78,
-            "yoy_growth_pct": 33.28
-          },
-          {
-            "name": "Care Health Insurance",
-            "premium_cr": 7940.52,
-            "market_share_pct": 2.8,
-            "yoy_growth_pct": 17.34
-          },
-          {
-            "name": "ManipalCigna Health Insurance",
-            "premium_cr": 1791.84,
-            "market_share_pct": 0.63,
-            "yoy_growth_pct": 24.23
-          },
-          {
-            "name": "Niva Bupa Health Insurance",
-            "premium_cr": 6560.44,
-            "market_share_pct": 2.32,
-            "yoy_growth_pct": 23.4
+            "name": "National Insurance Company",
+            "premium_cr": 14991.26,
+            "prior_premium_cr": 14086.56,
+            "market_share_pct": 5.29,
+            "yoy_growth_pct": 6.42
           },
           {
             "name": "Star Health & Allied Insurance",
             "premium_cr": 14366.98,
+            "prior_premium_cr": 13070.71,
             "market_share_pct": 5.07,
             "yoy_growth_pct": 9.92
           },
           {
-            "name": "Narayana Health Insurance",
-            "premium_cr": 24.97,
-            "market_share_pct": 0.01,
-            "yoy_growth_pct": 2071.24
+            "name": "SBI General Insurance",
+            "premium_cr": 12801.79,
+            "prior_premium_cr": 11136.34,
+            "market_share_pct": 4.52,
+            "yoy_growth_pct": 14.96
           },
           {
-            "name": "Galaxy Health Insurance",
-            "premium_cr": 97.98,
-            "market_share_pct": 0.03,
-            "yoy_growth_pct": 1752.08
+            "name": "HDFC ERGO General Insurance",
+            "premium_cr": 12270.93,
+            "prior_premium_cr": 13293.98,
+            "market_share_pct": 4.33,
+            "yoy_growth_pct": -7.7
+          },
+          {
+            "name": "Reliance General Insurance",
+            "premium_cr": 10681.8,
+            "prior_premium_cr": 11157.99,
+            "market_share_pct": 3.77,
+            "yoy_growth_pct": -4.27
           },
           {
             "name": "Agriculture Insurance Company of India",
             "premium_cr": 10141.34,
+            "prior_premium_cr": 8337.63,
             "market_share_pct": 3.58,
             "yoy_growth_pct": 21.63
           },
           {
-            "name": "ECGC Limited",
-            "premium_cr": 1143.35,
-            "market_share_pct": 0.4,
-            "yoy_growth_pct": 6.21
-          }
-        ],
-        "total_premium_cr": 283185.16,
-        "total_growth_pct": 10.66
-      },
-      {
-        "month": "2026-02",
-        "insurers": [
-          {
-            "name": "Acko General Insurance",
-            "premium_cr": 2353.03,
-            "market_share_pct": 0.77,
-            "yoy_growth_pct": 24.97
-          },
-          {
-            "name": "Bajaj Allianz General Insurance",
-            "premium_cr": 21794.23,
-            "market_share_pct": 7.1,
-            "yoy_growth_pct": 8.94
-          },
-          {
-            "name": "Cholamandalam MS General Insurance",
-            "premium_cr": 7101.25,
-            "market_share_pct": 2.31,
-            "yoy_growth_pct": -4.62
-          },
-          {
-            "name": "General Central Insurance",
-            "premium_cr": 4906.45,
-            "market_share_pct": 1.6,
-            "yoy_growth_pct": 0.53
-          },
-          {
             "name": "Go Digit General Insurance",
-            "premium_cr": 9090.36,
-            "market_share_pct": 2.96,
-            "yoy_growth_pct": 16.77
+            "premium_cr": 8416.48,
+            "prior_premium_cr": 7217.64,
+            "market_share_pct": 2.97,
+            "yoy_growth_pct": 16.61
           },
           {
-            "name": "HDFC ERGO General Insurance",
-            "premium_cr": 13459.07,
-            "market_share_pct": 4.38,
-            "yoy_growth_pct": -5.95
-          },
-          {
-            "name": "ICICI Lombard General Insurance",
-            "premium_cr": 26527.28,
-            "market_share_pct": 8.64,
-            "yoy_growth_pct": 6.0
+            "name": "Care Health Insurance",
+            "premium_cr": 7940.52,
+            "prior_premium_cr": 6767.38,
+            "market_share_pct": 2.8,
+            "yoy_growth_pct": 17.34
           },
           {
             "name": "IFFCO-Tokio General Insurance",
-            "premium_cr": 8160.52,
-            "market_share_pct": 2.66,
-            "yoy_growth_pct": 6.12
+            "premium_cr": 7452.04,
+            "prior_premium_cr": 7109.5,
+            "market_share_pct": 2.63,
+            "yoy_growth_pct": 4.82
           },
           {
-            "name": "Kshema General Insurance",
-            "premium_cr": 804.8,
-            "market_share_pct": 0.26,
-            "yoy_growth_pct": 6.06
+            "name": "Niva Bupa Health Insurance",
+            "premium_cr": 6560.44,
+            "prior_premium_cr": 5316.42,
+            "market_share_pct": 2.32,
+            "yoy_growth_pct": 23.4
           },
           {
-            "name": "Liberty General Insurance",
-            "premium_cr": 2588.21,
-            "market_share_pct": 0.84,
-            "yoy_growth_pct": 23.96
+            "name": "Cholamandalam MS General Insurance",
+            "premium_cr": 6449.93,
+            "prior_premium_cr": 6828.64,
+            "market_share_pct": 2.28,
+            "yoy_growth_pct": -5.55
           },
           {
-            "name": "Magma General Insurance",
-            "premium_cr": 3308.2,
-            "market_share_pct": 1.08,
-            "yoy_growth_pct": 10.44
+            "name": "Universal Sompo General Insurance",
+            "premium_cr": 5105.66,
+            "prior_premium_cr": 4449.95,
+            "market_share_pct": 1.8,
+            "yoy_growth_pct": 14.74
           },
           {
-            "name": "National Insurance Company",
-            "premium_cr": 16172.76,
-            "market_share_pct": 5.27,
-            "yoy_growth_pct": 7.52
+            "name": "Aditya Birla Health Insurance",
+            "premium_cr": 5032.0,
+            "prior_premium_cr": 3775.55,
+            "market_share_pct": 1.78,
+            "yoy_growth_pct": 33.28
           },
           {
-            "name": "Navi General Insurance",
-            "premium_cr": 116.89,
-            "market_share_pct": 0.04,
-            "yoy_growth_pct": 103.25
-          },
-          {
-            "name": "Raheja QBE General Insurance",
-            "premium_cr": 338.46,
-            "market_share_pct": 0.11,
-            "yoy_growth_pct": -0.45
-          },
-          {
-            "name": "IndusInd General Insurance",
-            "premium_cr": 11338.82,
-            "market_share_pct": 3.69,
-            "yoy_growth_pct": -4.62
-          },
-          {
-            "name": "Royal Sundaram General Insurance",
-            "premium_cr": 3997.75,
-            "market_share_pct": 1.3,
-            "yoy_growth_pct": 15.75
-          },
-          {
-            "name": "SBI General Insurance",
-            "premium_cr": 14215.72,
-            "market_share_pct": 4.63,
-            "yoy_growth_pct": 15.16
+            "name": "General Central Insurance",
+            "premium_cr": 4470.29,
+            "prior_premium_cr": 4511.76,
+            "market_share_pct": 1.58,
+            "yoy_growth_pct": -0.92
           },
           {
             "name": "Shriram General Insurance",
-            "premium_cr": 4150.39,
-            "market_share_pct": 1.35,
-            "yoy_growth_pct": 23.59
+            "premium_cr": 3745.02,
+            "prior_premium_cr": 3019.88,
+            "market_share_pct": 1.32,
+            "yoy_growth_pct": 24.01
           },
           {
-            "name": "Tata AIG General Insurance",
-            "premium_cr": 18270.57,
-            "market_share_pct": 5.95,
-            "yoy_growth_pct": 13.4
+            "name": "Royal Sundaram General Insurance",
+            "premium_cr": 3653.4,
+            "prior_premium_cr": 3194.61,
+            "market_share_pct": 1.29,
+            "yoy_growth_pct": 14.36
           },
+          {
+            "name": "Magma General Insurance",
+            "premium_cr": 3023.31,
+            "prior_premium_cr": 2700.38,
+            "market_share_pct": 1.07,
+            "yoy_growth_pct": 11.96
+          },
+          {
+            "name": "Liberty General Insurance",
+            "premium_cr": 2344.4,
+            "prior_premium_cr": 1921.45,
+            "market_share_pct": 0.83,
+            "yoy_growth_pct": 22.01
+          },
+          {
+            "name": "Acko General Insurance",
+            "premium_cr": 2150.31,
+            "prior_premium_cr": 1739.99,
+            "market_share_pct": 0.76,
+            "yoy_growth_pct": 23.58
+          },
+          {
+            "name": "Zurich Kotak General Insurance",
+            "premium_cr": 1875.47,
+            "prior_premium_cr": 1569.04,
+            "market_share_pct": 0.66,
+            "yoy_growth_pct": 19.53
+          },
+          {
+            "name": "ManipalCigna Health Insurance",
+            "premium_cr": 1791.84,
+            "prior_premium_cr": 1442.41,
+            "market_share_pct": 0.63,
+            "yoy_growth_pct": 24.23
+          },
+          {
+            "name": "ECGC Limited",
+            "premium_cr": 1143.35,
+            "prior_premium_cr": 1076.45,
+            "market_share_pct": 0.4,
+            "yoy_growth_pct": 6.21
+          },
+          {
+            "name": "Zuno General Insurance",
+            "premium_cr": 990.65,
+            "prior_premium_cr": 830.02,
+            "market_share_pct": 0.35,
+            "yoy_growth_pct": 19.35
+          },
+          {
+            "name": "Kshema General Insurance",
+            "premium_cr": 653.39,
+            "prior_premium_cr": 734.67,
+            "market_share_pct": 0.23,
+            "yoy_growth_pct": -11.06
+          },
+          {
+            "name": "Raheja QBE General Insurance",
+            "premium_cr": 314.34,
+            "prior_premium_cr": 327.65,
+            "market_share_pct": 0.11,
+            "yoy_growth_pct": -4.06
+          },
+          {
+            "name": "Navi General Insurance",
+            "premium_cr": 102.98,
+            "prior_premium_cr": 49.56,
+            "market_share_pct": 0.04,
+            "yoy_growth_pct": 107.82
+          },
+          {
+            "name": "Galaxy Health Insurance",
+            "premium_cr": 97.98,
+            "prior_premium_cr": 5.29,
+            "market_share_pct": 0.03,
+            "yoy_growth_pct": 1752.08
+          },
+          {
+            "name": "Narayana Health Insurance",
+            "premium_cr": 24.97,
+            "prior_premium_cr": 1.15,
+            "market_share_pct": 0.01,
+            "yoy_growth_pct": 2071.24
+          }
+        ],
+        "total_premium_cr": 283185.16,
+        "total_growth_pct": 9.3,
+        "filename_month": "2026-01",
+        "month_source": "filename"
+      },
+      {
+        "month": "2026-02",
+        "month_label": "Feb 2026",
+        "fiscal_year": "FY2025-26",
+        "period_type": "cumulative_ytd",
+        "source_file": "NonLife_GDP_Feb2026.xlsx",
+        "generated_at": "2026-07-08 08:43:54",
+        "insurers": [
           {
             "name": "New India Assurance",
             "premium_cr": 39545.57,
+            "prior_premium_cr": 35708.45,
             "market_share_pct": 12.88,
             "yoy_growth_pct": 10.75
           },
           {
-            "name": "Oriental Insurance",
-            "premium_cr": 19072.02,
-            "market_share_pct": 6.21,
-            "yoy_growth_pct": 5.85
+            "name": "ICICI Lombard General Insurance",
+            "premium_cr": 26527.28,
+            "prior_premium_cr": 25025.47,
+            "market_share_pct": 8.64,
+            "yoy_growth_pct": 6.0
+          },
+          {
+            "name": "Bajaj Allianz General Insurance",
+            "premium_cr": 21794.23,
+            "prior_premium_cr": 20006.13,
+            "market_share_pct": 7.1,
+            "yoy_growth_pct": 8.94
           },
           {
             "name": "United India Insurance",
             "premium_cr": 19401.45,
+            "prior_premium_cr": 18090.31,
             "market_share_pct": 6.32,
             "yoy_growth_pct": 7.25
           },
           {
-            "name": "Universal Sompo General Insurance",
-            "premium_cr": 5625.78,
-            "market_share_pct": 1.83,
-            "yoy_growth_pct": 17.85
+            "name": "Oriental Insurance",
+            "premium_cr": 19072.02,
+            "prior_premium_cr": 18017.96,
+            "market_share_pct": 6.21,
+            "yoy_growth_pct": 5.85
           },
           {
-            "name": "Zuno General Insurance",
-            "premium_cr": 1104.25,
-            "market_share_pct": 0.36,
-            "yoy_growth_pct": 21.59
+            "name": "Tata AIG General Insurance",
+            "premium_cr": 18270.57,
+            "prior_premium_cr": 16111.02,
+            "market_share_pct": 5.95,
+            "yoy_growth_pct": 13.4
           },
           {
-            "name": "Zurich Kotak General Insurance",
-            "premium_cr": 2044.0,
-            "market_share_pct": 0.67,
-            "yoy_growth_pct": 18.58
-          },
-          {
-            "name": "Aditya Birla Health Insurance",
-            "premium_cr": 5524.03,
-            "market_share_pct": 1.8,
-            "yoy_growth_pct": 32.79
-          },
-          {
-            "name": "Care Health Insurance",
-            "premium_cr": 8871.09,
-            "market_share_pct": 2.89,
-            "yoy_growth_pct": 19.49
-          },
-          {
-            "name": "ManipalCigna Health Insurance",
-            "premium_cr": 1961.41,
-            "market_share_pct": 0.64,
-            "yoy_growth_pct": 25.15
-          },
-          {
-            "name": "Niva Bupa Health Insurance",
-            "premium_cr": 7476.61,
-            "market_share_pct": 2.44,
-            "yoy_growth_pct": 25.6
+            "name": "National Insurance Company",
+            "premium_cr": 16172.76,
+            "prior_premium_cr": 15041.77,
+            "market_share_pct": 5.27,
+            "yoy_growth_pct": 7.52
           },
           {
             "name": "Star Health & Allied Insurance",
             "premium_cr": 16038.24,
+            "prior_premium_cr": 14498.02,
             "market_share_pct": 5.22,
             "yoy_growth_pct": 10.62
           },
           {
-            "name": "Narayana Health Insurance",
-            "premium_cr": 26.94,
-            "market_share_pct": 0.01,
-            "yoy_growth_pct": 1439.45
+            "name": "SBI General Insurance",
+            "premium_cr": 14215.72,
+            "prior_premium_cr": 12344.51,
+            "market_share_pct": 4.63,
+            "yoy_growth_pct": 15.16
           },
           {
-            "name": "Galaxy Health Insurance",
-            "premium_cr": 115.23,
-            "market_share_pct": 0.04,
-            "yoy_growth_pct": 1080.03
+            "name": "HDFC ERGO General Insurance",
+            "premium_cr": 13459.07,
+            "prior_premium_cr": 14310.09,
+            "market_share_pct": 4.38,
+            "yoy_growth_pct": -5.95
+          },
+          {
+            "name": "IndusInd General Insurance",
+            "premium_cr": 11338.82,
+            "prior_premium_cr": 11888.11,
+            "market_share_pct": 3.69,
+            "yoy_growth_pct": -4.62
           },
           {
             "name": "Agriculture Insurance Company of India",
             "premium_cr": 10246.6,
+            "prior_premium_cr": 9332.99,
             "market_share_pct": 3.34,
             "yoy_growth_pct": 9.79
           },
           {
-            "name": "ECGC Limited",
-            "premium_cr": 1273.95,
-            "market_share_pct": 0.41,
-            "yoy_growth_pct": 6.68
-          }
-        ],
-        "total_premium_cr": 307021.93,
-        "total_growth_pct": 10.38
-      },
-      {
-        "month": "2026-03",
-        "insurers": [
-          {
-            "name": "Acko General Insurance",
-            "premium_cr": 2587.05,
-            "market_share_pct": 0.77,
-            "yoy_growth_pct": 25.28
-          },
-          {
-            "name": "Bajaj Allianz General Insurance",
-            "premium_cr": 23178.51,
-            "market_share_pct": 6.9,
-            "yoy_growth_pct": 8.23
-          },
-          {
-            "name": "Cholamandalam MS General Insurance",
-            "premium_cr": 7762.0,
-            "market_share_pct": 2.31,
-            "yoy_growth_pct": -4.46
-          },
-          {
-            "name": "General Central Insurance",
-            "premium_cr": 5233.34,
-            "market_share_pct": 1.56,
-            "yoy_growth_pct": -3.23
-          },
-          {
             "name": "Go Digit General Insurance",
-            "premium_cr": 9846.13,
-            "market_share_pct": 2.93,
-            "yoy_growth_pct": 16.22
+            "premium_cr": 9090.36,
+            "prior_premium_cr": 7784.72,
+            "market_share_pct": 2.96,
+            "yoy_growth_pct": 16.77
           },
           {
-            "name": "HDFC ERGO General Insurance",
-            "premium_cr": 15025.2,
-            "market_share_pct": 4.47,
-            "yoy_growth_pct": -5.01
-          },
-          {
-            "name": "ICICI Lombard General Insurance",
-            "premium_cr": 28712.46,
-            "market_share_pct": 8.55,
-            "yoy_growth_pct": 7.24
+            "name": "Care Health Insurance",
+            "premium_cr": 8871.09,
+            "prior_premium_cr": 7424.09,
+            "market_share_pct": 2.89,
+            "yoy_growth_pct": 19.49
           },
           {
             "name": "IFFCO-Tokio General Insurance",
-            "premium_cr": 8928.02,
+            "premium_cr": 8160.52,
+            "prior_premium_cr": 7689.6,
             "market_share_pct": 2.66,
-            "yoy_growth_pct": 7.41
+            "yoy_growth_pct": 6.12
           },
           {
-            "name": "Kshema General Insurance",
-            "premium_cr": 1006.84,
-            "market_share_pct": 0.3,
-            "yoy_growth_pct": 30.51
+            "name": "Niva Bupa Health Insurance",
+            "premium_cr": 7476.61,
+            "prior_premium_cr": 5952.75,
+            "market_share_pct": 2.44,
+            "yoy_growth_pct": 25.6
           },
           {
-            "name": "Liberty General Insurance",
-            "premium_cr": 2814.82,
-            "market_share_pct": 0.84,
-            "yoy_growth_pct": 25.31
+            "name": "Cholamandalam MS General Insurance",
+            "premium_cr": 7101.25,
+            "prior_premium_cr": 7445.35,
+            "market_share_pct": 2.31,
+            "yoy_growth_pct": -4.62
           },
           {
-            "name": "Magma General Insurance",
-            "premium_cr": 3615.48,
-            "market_share_pct": 1.08,
-            "yoy_growth_pct": 8.43
+            "name": "Universal Sompo General Insurance",
+            "premium_cr": 5625.78,
+            "prior_premium_cr": 4773.56,
+            "market_share_pct": 1.83,
+            "yoy_growth_pct": 17.85
           },
           {
-            "name": "National Insurance Company",
-            "premium_cr": 17632.56,
-            "market_share_pct": 5.25,
-            "yoy_growth_pct": 5.16
+            "name": "Aditya Birla Health Insurance",
+            "premium_cr": 5524.03,
+            "prior_premium_cr": 4159.98,
+            "market_share_pct": 1.8,
+            "yoy_growth_pct": 32.79
           },
           {
-            "name": "Navi General Insurance",
-            "premium_cr": 129.13,
-            "market_share_pct": 0.04,
-            "yoy_growth_pct": 29.74
-          },
-          {
-            "name": "Raheja QBE General Insurance",
-            "premium_cr": 374.48,
-            "market_share_pct": 0.11,
-            "yoy_growth_pct": 6.02
-          },
-          {
-            "name": "IndusInd General Insurance",
-            "premium_cr": 12236.6,
-            "market_share_pct": 3.64,
-            "yoy_growth_pct": -2.48
-          },
-          {
-            "name": "Royal Sundaram General Insurance",
-            "premium_cr": 4396.25,
-            "market_share_pct": 1.31,
-            "yoy_growth_pct": 16.82
-          },
-          {
-            "name": "SBI General Insurance",
-            "premium_cr": 15904.44,
-            "market_share_pct": 4.73,
-            "yoy_growth_pct": 14.51
+            "name": "General Central Insurance",
+            "premium_cr": 4906.45,
+            "prior_premium_cr": 4880.36,
+            "market_share_pct": 1.6,
+            "yoy_growth_pct": 0.53
           },
           {
             "name": "Shriram General Insurance",
-            "premium_cr": 4635.51,
-            "market_share_pct": 1.38,
-            "yoy_growth_pct": 23.5
+            "premium_cr": 4150.39,
+            "prior_premium_cr": 3358.32,
+            "market_share_pct": 1.35,
+            "yoy_growth_pct": 23.59
           },
           {
-            "name": "Tata AIG General Insurance",
-            "premium_cr": 20050.31,
-            "market_share_pct": 5.97,
-            "yoy_growth_pct": 13.26
+            "name": "Royal Sundaram General Insurance",
+            "premium_cr": 3997.75,
+            "prior_premium_cr": 3453.82,
+            "market_share_pct": 1.3,
+            "yoy_growth_pct": 15.75
           },
+          {
+            "name": "Magma General Insurance",
+            "premium_cr": 3308.2,
+            "prior_premium_cr": 2995.36,
+            "market_share_pct": 1.08,
+            "yoy_growth_pct": 10.44
+          },
+          {
+            "name": "Liberty General Insurance",
+            "premium_cr": 2588.21,
+            "prior_premium_cr": 2087.91,
+            "market_share_pct": 0.84,
+            "yoy_growth_pct": 23.96
+          },
+          {
+            "name": "Acko General Insurance",
+            "premium_cr": 2353.03,
+            "prior_premium_cr": 1882.9,
+            "market_share_pct": 0.77,
+            "yoy_growth_pct": 24.97
+          },
+          {
+            "name": "Zurich Kotak General Insurance",
+            "premium_cr": 2044.0,
+            "prior_premium_cr": 1723.73,
+            "market_share_pct": 0.67,
+            "yoy_growth_pct": 18.58
+          },
+          {
+            "name": "ManipalCigna Health Insurance",
+            "premium_cr": 1961.41,
+            "prior_premium_cr": 1567.25,
+            "market_share_pct": 0.64,
+            "yoy_growth_pct": 25.15
+          },
+          {
+            "name": "ECGC Limited",
+            "premium_cr": 1273.95,
+            "prior_premium_cr": 1194.17,
+            "market_share_pct": 0.41,
+            "yoy_growth_pct": 6.68
+          },
+          {
+            "name": "Zuno General Insurance",
+            "premium_cr": 1104.25,
+            "prior_premium_cr": 908.14,
+            "market_share_pct": 0.36,
+            "yoy_growth_pct": 21.59
+          },
+          {
+            "name": "Kshema General Insurance",
+            "premium_cr": 804.8,
+            "prior_premium_cr": 758.82,
+            "market_share_pct": 0.26,
+            "yoy_growth_pct": 6.06
+          },
+          {
+            "name": "Raheja QBE General Insurance",
+            "premium_cr": 338.46,
+            "prior_premium_cr": 339.98,
+            "market_share_pct": 0.11,
+            "yoy_growth_pct": -0.45
+          },
+          {
+            "name": "Navi General Insurance",
+            "premium_cr": 116.89,
+            "prior_premium_cr": 57.51,
+            "market_share_pct": 0.04,
+            "yoy_growth_pct": 103.25
+          },
+          {
+            "name": "Galaxy Health Insurance",
+            "premium_cr": 115.23,
+            "prior_premium_cr": 9.76,
+            "market_share_pct": 0.04,
+            "yoy_growth_pct": 1080.03
+          },
+          {
+            "name": "Narayana Health Insurance",
+            "premium_cr": 26.94,
+            "prior_premium_cr": 1.75,
+            "market_share_pct": 0.01,
+            "yoy_growth_pct": 1439.45
+          }
+        ],
+        "total_premium_cr": 307021.93,
+        "total_growth_pct": 9.33,
+        "filename_month": "2026-02",
+        "month_source": "filename"
+      },
+      {
+        "month": "2026-03",
+        "month_label": "Mar 2026",
+        "fiscal_year": "FY2025-26",
+        "period_type": "cumulative_ytd",
+        "source_file": "NonLife_GDP_March2026.xlsx",
+        "generated_at": "2026-07-08 08:43:54",
+        "insurers": [
           {
             "name": "New India Assurance",
             "premium_cr": 42821.77,
+            "prior_premium_cr": 38624.76,
             "market_share_pct": 12.75,
             "yoy_growth_pct": 10.87
           },
           {
-            "name": "Oriental Insurance",
-            "premium_cr": 20597.75,
-            "market_share_pct": 6.13,
-            "yoy_growth_pct": 4.09
+            "name": "ICICI Lombard General Insurance",
+            "premium_cr": 28712.46,
+            "prior_premium_cr": 26773.0,
+            "market_share_pct": 8.55,
+            "yoy_growth_pct": 7.24
+          },
+          {
+            "name": "Bajaj Allianz General Insurance",
+            "premium_cr": 23178.51,
+            "prior_premium_cr": 21416.81,
+            "market_share_pct": 6.9,
+            "yoy_growth_pct": 8.23
           },
           {
             "name": "United India Insurance",
             "premium_cr": 21422.63,
+            "prior_premium_cr": 20072.15,
             "market_share_pct": 6.38,
             "yoy_growth_pct": 6.73
           },
           {
-            "name": "Universal Sompo General Insurance",
-            "premium_cr": 6007.72,
-            "market_share_pct": 1.79,
-            "yoy_growth_pct": 18.3
+            "name": "Oriental Insurance",
+            "premium_cr": 20597.75,
+            "prior_premium_cr": 19788.82,
+            "market_share_pct": 6.13,
+            "yoy_growth_pct": 4.09
           },
           {
-            "name": "Zuno General Insurance",
-            "premium_cr": 1219.31,
-            "market_share_pct": 0.36,
-            "yoy_growth_pct": 22.88
-          },
-          {
-            "name": "Zurich Kotak General Insurance",
-            "premium_cr": 2237.71,
-            "market_share_pct": 0.67,
-            "yoy_growth_pct": 16.83
-          },
-          {
-            "name": "Aditya Birla Health Insurance",
-            "premium_cr": 6238.26,
-            "market_share_pct": 1.86,
-            "yoy_growth_pct": 29.38
-          },
-          {
-            "name": "Care Health Insurance",
-            "premium_cr": 10031.31,
-            "market_share_pct": 2.99,
-            "yoy_growth_pct": 20.91
-          },
-          {
-            "name": "ManipalCigna Health Insurance",
-            "premium_cr": 2212.97,
-            "market_share_pct": 0.66,
-            "yoy_growth_pct": 23.11
-          },
-          {
-            "name": "Niva Bupa Health Insurance",
-            "premium_cr": 8585.93,
-            "market_share_pct": 2.56,
-            "yoy_growth_pct": 26.97
+            "name": "Tata AIG General Insurance",
+            "premium_cr": 20050.31,
+            "prior_premium_cr": 17702.83,
+            "market_share_pct": 5.97,
+            "yoy_growth_pct": 13.26
           },
           {
             "name": "Star Health & Allied Insurance",
             "premium_cr": 18605.61,
+            "prior_premium_cr": 16716.21,
             "market_share_pct": 5.54,
             "yoy_growth_pct": 11.3
           },
           {
-            "name": "Narayana Health Insurance",
-            "premium_cr": 43.73,
-            "market_share_pct": 0.01,
-            "yoy_growth_pct": 1743.77
+            "name": "National Insurance Company",
+            "premium_cr": 17632.56,
+            "prior_premium_cr": 16767.0,
+            "market_share_pct": 5.25,
+            "yoy_growth_pct": 5.16
           },
           {
-            "name": "Galaxy Health Insurance",
-            "premium_cr": 148.14,
-            "market_share_pct": 0.04,
-            "yoy_growth_pct": 774.23
+            "name": "SBI General Insurance",
+            "premium_cr": 15904.44,
+            "prior_premium_cr": 13889.65,
+            "market_share_pct": 4.73,
+            "yoy_growth_pct": 14.51
+          },
+          {
+            "name": "HDFC ERGO General Insurance",
+            "premium_cr": 15025.2,
+            "prior_premium_cr": 15817.28,
+            "market_share_pct": 4.47,
+            "yoy_growth_pct": -5.01
+          },
+          {
+            "name": "IndusInd General Insurance",
+            "premium_cr": 12236.6,
+            "prior_premium_cr": 12548.37,
+            "market_share_pct": 3.64,
+            "yoy_growth_pct": -2.48
           },
           {
             "name": "Agriculture Insurance Company of India",
             "premium_cr": 10216.06,
+            "prior_premium_cr": 9741.57,
             "market_share_pct": 3.04,
             "yoy_growth_pct": 4.87
           },
           {
-            "name": "ECGC Limited",
-            "premium_cr": 1460.04,
-            "market_share_pct": 0.43,
-            "yoy_growth_pct": 6.83
-          }
-        ],
-        "total_premium_cr": 335918.07,
-        "total_growth_pct": 10.26
-      },
-      {
-        "month": "2026-05",
-        "insurers": [
-          {
-            "name": "Acko General Insurance",
-            "premium_cr": 504.13,
-            "market_share_pct": 0.83,
-            "yoy_growth_pct": 35.97
-          },
-          {
-            "name": "Bajaj Allianz General Insurance",
-            "premium_cr": 4008.65,
-            "market_share_pct": 6.62,
-            "yoy_growth_pct": 7.61
-          },
-          {
-            "name": "Cholamandalam MS General Insurance",
-            "premium_cr": 1311.8,
-            "market_share_pct": 2.16,
-            "yoy_growth_pct": 3.51
-          },
-          {
-            "name": "General Central Insurance",
-            "premium_cr": 821.99,
-            "market_share_pct": 1.36,
-            "yoy_growth_pct": -13.28
+            "name": "Care Health Insurance",
+            "premium_cr": 10031.31,
+            "prior_premium_cr": 8296.56,
+            "market_share_pct": 2.99,
+            "yoy_growth_pct": 20.91
           },
           {
             "name": "Go Digit General Insurance",
-            "premium_cr": 1727.22,
-            "market_share_pct": 2.85,
-            "yoy_growth_pct": -2.24
-          },
-          {
-            "name": "HDFC ERGO General Insurance",
-            "premium_cr": 2962.79,
-            "market_share_pct": 4.89,
-            "yoy_growth_pct": 16.2
-          },
-          {
-            "name": "ICICI Lombard General Insurance",
-            "premium_cr": 6059.04,
-            "market_share_pct": 10.0,
-            "yoy_growth_pct": 5.42
+            "premium_cr": 9846.13,
+            "prior_premium_cr": 8472.16,
+            "market_share_pct": 2.93,
+            "yoy_growth_pct": 16.22
           },
           {
             "name": "IFFCO-Tokio General Insurance",
-            "premium_cr": 1600.42,
-            "market_share_pct": 2.64,
-            "yoy_growth_pct": 11.13
+            "premium_cr": 8928.02,
+            "prior_premium_cr": 8312.34,
+            "market_share_pct": 2.66,
+            "yoy_growth_pct": 7.41
           },
           {
-            "name": "Kshema General Insurance",
-            "premium_cr": 18.43,
-            "market_share_pct": 0.03,
-            "yoy_growth_pct": -94.67
+            "name": "Niva Bupa Health Insurance",
+            "premium_cr": 8585.93,
+            "prior_premium_cr": 6762.22,
+            "market_share_pct": 2.56,
+            "yoy_growth_pct": 26.97
           },
           {
-            "name": "कीवी जनरल इंश्योरेंस Limited",
-            "premium_cr": 0.02,
-            "market_share_pct": 0.0,
-            "yoy_growth_pct": 0
+            "name": "Cholamandalam MS General Insurance",
+            "premium_cr": 7762.0,
+            "prior_premium_cr": 8124.31,
+            "market_share_pct": 2.31,
+            "yoy_growth_pct": -4.46
           },
           {
-            "name": "Liberty General Insurance",
-            "premium_cr": 530.81,
-            "market_share_pct": 0.88,
-            "yoy_growth_pct": 23.83
+            "name": "Aditya Birla Health Insurance",
+            "premium_cr": 6238.26,
+            "prior_premium_cr": 4821.7,
+            "market_share_pct": 1.86,
+            "yoy_growth_pct": 29.38
           },
           {
-            "name": "Magma General Insurance",
-            "premium_cr": 612.82,
-            "market_share_pct": 1.01,
-            "yoy_growth_pct": -2.41
+            "name": "Universal Sompo General Insurance",
+            "premium_cr": 6007.72,
+            "prior_premium_cr": 5078.45,
+            "market_share_pct": 1.79,
+            "yoy_growth_pct": 18.3
           },
           {
-            "name": "National Insurance Company",
-            "premium_cr": 2576.35,
-            "market_share_pct": 4.25,
-            "yoy_growth_pct": -0.61
-          },
-          {
-            "name": "Navi General Insurance",
-            "premium_cr": 35.47,
-            "market_share_pct": 0.06,
-            "yoy_growth_pct": 26.54
-          },
-          {
-            "name": "Raheja QBE General Insurance",
-            "premium_cr": 37.06,
-            "market_share_pct": 0.06,
-            "yoy_growth_pct": 22.84
-          },
-          {
-            "name": "IndusInd General Insurance",
-            "premium_cr": 2247.95,
-            "market_share_pct": 3.71,
-            "yoy_growth_pct": -4.0
-          },
-          {
-            "name": "Royal Sundaram General Insurance",
-            "premium_cr": 895.9,
-            "market_share_pct": 1.48,
-            "yoy_growth_pct": 7.57
-          },
-          {
-            "name": "SBI General Insurance",
-            "premium_cr": 2354.19,
-            "market_share_pct": 3.89,
-            "yoy_growth_pct": 8.05
+            "name": "General Central Insurance",
+            "premium_cr": 5233.34,
+            "prior_premium_cr": 5408.21,
+            "market_share_pct": 1.56,
+            "yoy_growth_pct": -3.23
           },
           {
             "name": "Shriram General Insurance",
-            "premium_cr": 759.51,
-            "market_share_pct": 1.25,
-            "yoy_growth_pct": 23.77
+            "premium_cr": 4635.51,
+            "prior_premium_cr": 3753.38,
+            "market_share_pct": 1.38,
+            "yoy_growth_pct": 23.5
           },
           {
-            "name": "Tata AIG General Insurance",
-            "premium_cr": 4771.44,
-            "market_share_pct": 7.87,
-            "yoy_growth_pct": 36.7
+            "name": "Royal Sundaram General Insurance",
+            "premium_cr": 4396.25,
+            "prior_premium_cr": 3763.18,
+            "market_share_pct": 1.31,
+            "yoy_growth_pct": 16.82
           },
+          {
+            "name": "Magma General Insurance",
+            "premium_cr": 3615.48,
+            "prior_premium_cr": 3334.4,
+            "market_share_pct": 1.08,
+            "yoy_growth_pct": 8.43
+          },
+          {
+            "name": "Liberty General Insurance",
+            "premium_cr": 2814.82,
+            "prior_premium_cr": 2246.35,
+            "market_share_pct": 0.84,
+            "yoy_growth_pct": 25.31
+          },
+          {
+            "name": "Acko General Insurance",
+            "premium_cr": 2587.05,
+            "prior_premium_cr": 2065.04,
+            "market_share_pct": 0.77,
+            "yoy_growth_pct": 25.28
+          },
+          {
+            "name": "Zurich Kotak General Insurance",
+            "premium_cr": 2237.71,
+            "prior_premium_cr": 1915.37,
+            "market_share_pct": 0.67,
+            "yoy_growth_pct": 16.83
+          },
+          {
+            "name": "ManipalCigna Health Insurance",
+            "premium_cr": 2212.97,
+            "prior_premium_cr": 1797.56,
+            "market_share_pct": 0.66,
+            "yoy_growth_pct": 23.11
+          },
+          {
+            "name": "ECGC Limited",
+            "premium_cr": 1460.04,
+            "prior_premium_cr": 1366.71,
+            "market_share_pct": 0.43,
+            "yoy_growth_pct": 6.83
+          },
+          {
+            "name": "Zuno General Insurance",
+            "premium_cr": 1219.31,
+            "prior_premium_cr": 992.3,
+            "market_share_pct": 0.36,
+            "yoy_growth_pct": 22.88
+          },
+          {
+            "name": "Kshema General Insurance",
+            "premium_cr": 1006.84,
+            "prior_premium_cr": 771.46,
+            "market_share_pct": 0.3,
+            "yoy_growth_pct": 30.51
+          },
+          {
+            "name": "Raheja QBE General Insurance",
+            "premium_cr": 374.48,
+            "prior_premium_cr": 353.22,
+            "market_share_pct": 0.11,
+            "yoy_growth_pct": 6.02
+          },
+          {
+            "name": "Galaxy Health Insurance",
+            "premium_cr": 148.14,
+            "prior_premium_cr": 16.94,
+            "market_share_pct": 0.04,
+            "yoy_growth_pct": 774.23
+          },
+          {
+            "name": "Navi General Insurance",
+            "premium_cr": 129.13,
+            "prior_premium_cr": 99.53,
+            "market_share_pct": 0.04,
+            "yoy_growth_pct": 29.74
+          },
+          {
+            "name": "Narayana Health Insurance",
+            "premium_cr": 43.73,
+            "prior_premium_cr": 2.37,
+            "market_share_pct": 0.01,
+            "yoy_growth_pct": 1743.77
+          }
+        ],
+        "total_premium_cr": 335918.07,
+        "total_growth_pct": 9.2,
+        "filename_month": "2026-03",
+        "month_source": "filename"
+      },
+      {
+        "month": "2026-05",
+        "month_label": "May 2026",
+        "fiscal_year": "FY2026-27",
+        "period_type": "cumulative_ytd",
+        "source_file": "NonLife_GDP_May2026.xlsx",
+        "generated_at": "2026-07-08 08:43:54",
+        "insurers": [
           {
             "name": "New India Assurance",
             "premium_cr": 9030.6,
+            "prior_premium_cr": 8971.27,
             "market_share_pct": 14.9,
             "yoy_growth_pct": 0.66
           },
           {
+            "name": "ICICI Lombard General Insurance",
+            "premium_cr": 6059.04,
+            "prior_premium_cr": 5747.43,
+            "market_share_pct": 10.0,
+            "yoy_growth_pct": 5.42
+          },
+          {
+            "name": "Tata AIG General Insurance",
+            "premium_cr": 4771.44,
+            "prior_premium_cr": 3490.36,
+            "market_share_pct": 7.87,
+            "yoy_growth_pct": 36.7
+          },
+          {
+            "name": "Bajaj Allianz General Insurance",
+            "premium_cr": 4008.65,
+            "prior_premium_cr": 3725.3,
+            "market_share_pct": 6.62,
+            "yoy_growth_pct": 7.61
+          },
+          {
             "name": "Oriental Insurance",
             "premium_cr": 3950.56,
+            "prior_premium_cr": 4094.04,
             "market_share_pct": 6.52,
             "yoy_growth_pct": -3.5
           },
           {
             "name": "United India Insurance",
             "premium_cr": 3934.1,
+            "prior_premium_cr": 3920.34,
             "market_share_pct": 6.49,
             "yoy_growth_pct": 0.35
           },
           {
-            "name": "Universal Sompo General Insurance",
-            "premium_cr": 1245.68,
-            "market_share_pct": 2.06,
-            "yoy_growth_pct": 37.02
-          },
-          {
-            "name": "Zuno General Insurance",
-            "premium_cr": 269.67,
-            "market_share_pct": 0.45,
-            "yoy_growth_pct": 62.05
-          },
-          {
-            "name": "Zurich Kotak General Insurance",
-            "premium_cr": 409.93,
-            "market_share_pct": 0.68,
-            "yoy_growth_pct": -4.8
-          },
-          {
-            "name": "Aditya Birla Health Insurance",
-            "premium_cr": 1251.58,
-            "market_share_pct": 2.07,
-            "yoy_growth_pct": 59.51
-          },
-          {
-            "name": "Care Health Insurance",
-            "premium_cr": 1956.78,
-            "market_share_pct": 3.23,
-            "yoy_growth_pct": 43.28
-          },
-          {
-            "name": "ManipalCigna Health Insurance",
-            "premium_cr": 483.36,
-            "market_share_pct": 0.8,
-            "yoy_growth_pct": 36.38
-          },
-          {
-            "name": "Niva Bupa Health Insurance",
-            "premium_cr": 1351.79,
-            "market_share_pct": 2.23,
-            "yoy_growth_pct": 30.28
+            "name": "HDFC ERGO General Insurance",
+            "premium_cr": 2962.79,
+            "prior_premium_cr": 2549.82,
+            "market_share_pct": 4.89,
+            "yoy_growth_pct": 16.2
           },
           {
             "name": "Star Health & Allied Insurance",
             "premium_cr": 2692.74,
+            "prior_premium_cr": 2259.23,
             "market_share_pct": 4.44,
             "yoy_growth_pct": 19.19
           },
           {
-            "name": "Narayana Health Insurance",
-            "premium_cr": 19.24,
-            "market_share_pct": 0.03,
-            "yoy_growth_pct": 1665.14
+            "name": "National Insurance Company",
+            "premium_cr": 2576.35,
+            "prior_premium_cr": 2592.29,
+            "market_share_pct": 4.25,
+            "yoy_growth_pct": -0.61
           },
           {
-            "name": "Galaxy Health Insurance",
-            "premium_cr": 32.44,
-            "market_share_pct": 0.05,
-            "yoy_growth_pct": 320.21
+            "name": "SBI General Insurance",
+            "premium_cr": 2354.19,
+            "prior_premium_cr": 2178.71,
+            "market_share_pct": 3.89,
+            "yoy_growth_pct": 8.05
           },
           {
-            "name": "Agriculture Insurance Company of India",
-            "premium_cr": -89.56,
-            "market_share_pct": -0.15,
-            "yoy_growth_pct": -421.23
+            "name": "IndusInd General Insurance",
+            "premium_cr": 2247.95,
+            "prior_premium_cr": 2341.6,
+            "market_share_pct": 3.71,
+            "yoy_growth_pct": -4.0
+          },
+          {
+            "name": "Care Health Insurance",
+            "premium_cr": 1956.78,
+            "prior_premium_cr": 1365.75,
+            "market_share_pct": 3.23,
+            "yoy_growth_pct": 43.28
+          },
+          {
+            "name": "Go Digit General Insurance",
+            "premium_cr": 1727.22,
+            "prior_premium_cr": 1766.78,
+            "market_share_pct": 2.85,
+            "yoy_growth_pct": -2.24
+          },
+          {
+            "name": "IFFCO-Tokio General Insurance",
+            "premium_cr": 1600.42,
+            "prior_premium_cr": 1440.13,
+            "market_share_pct": 2.64,
+            "yoy_growth_pct": 11.13
+          },
+          {
+            "name": "Niva Bupa Health Insurance",
+            "premium_cr": 1351.79,
+            "prior_premium_cr": 1037.61,
+            "market_share_pct": 2.23,
+            "yoy_growth_pct": 30.28
+          },
+          {
+            "name": "Cholamandalam MS General Insurance",
+            "premium_cr": 1311.8,
+            "prior_premium_cr": 1267.32,
+            "market_share_pct": 2.16,
+            "yoy_growth_pct": 3.51
+          },
+          {
+            "name": "Aditya Birla Health Insurance",
+            "premium_cr": 1251.58,
+            "prior_premium_cr": 784.62,
+            "market_share_pct": 2.07,
+            "yoy_growth_pct": 59.51
+          },
+          {
+            "name": "Universal Sompo General Insurance",
+            "premium_cr": 1245.68,
+            "prior_premium_cr": 909.14,
+            "market_share_pct": 2.06,
+            "yoy_growth_pct": 37.02
+          },
+          {
+            "name": "Royal Sundaram General Insurance",
+            "premium_cr": 895.9,
+            "prior_premium_cr": 832.86,
+            "market_share_pct": 1.48,
+            "yoy_growth_pct": 7.57
+          },
+          {
+            "name": "General Central Insurance",
+            "premium_cr": 821.99,
+            "prior_premium_cr": 947.91,
+            "market_share_pct": 1.36,
+            "yoy_growth_pct": -13.28
+          },
+          {
+            "name": "Shriram General Insurance",
+            "premium_cr": 759.51,
+            "prior_premium_cr": 613.63,
+            "market_share_pct": 1.25,
+            "yoy_growth_pct": 23.77
+          },
+          {
+            "name": "Magma General Insurance",
+            "premium_cr": 612.82,
+            "prior_premium_cr": 627.96,
+            "market_share_pct": 1.01,
+            "yoy_growth_pct": -2.41
+          },
+          {
+            "name": "Liberty General Insurance",
+            "premium_cr": 530.81,
+            "prior_premium_cr": 428.65,
+            "market_share_pct": 0.88,
+            "yoy_growth_pct": 23.83
+          },
+          {
+            "name": "Acko General Insurance",
+            "premium_cr": 504.13,
+            "prior_premium_cr": 370.77,
+            "market_share_pct": 0.83,
+            "yoy_growth_pct": 35.97
+          },
+          {
+            "name": "ManipalCigna Health Insurance",
+            "premium_cr": 483.36,
+            "prior_premium_cr": 354.41,
+            "market_share_pct": 0.8,
+            "yoy_growth_pct": 36.38
+          },
+          {
+            "name": "Zurich Kotak General Insurance",
+            "premium_cr": 409.93,
+            "prior_premium_cr": 430.62,
+            "market_share_pct": 0.68,
+            "yoy_growth_pct": -4.8
+          },
+          {
+            "name": "Zuno General Insurance",
+            "premium_cr": 269.67,
+            "prior_premium_cr": 166.41,
+            "market_share_pct": 0.45,
+            "yoy_growth_pct": 62.05
           },
           {
             "name": "ECGC Limited",
             "premium_cr": 219.16,
+            "prior_premium_cr": 196.26,
             "market_share_pct": 0.36,
             "yoy_growth_pct": 11.67
+          },
+          {
+            "name": "Raheja QBE General Insurance",
+            "premium_cr": 37.06,
+            "prior_premium_cr": 30.17,
+            "market_share_pct": 0.06,
+            "yoy_growth_pct": 22.84
+          },
+          {
+            "name": "Navi General Insurance",
+            "premium_cr": 35.47,
+            "prior_premium_cr": 28.03,
+            "market_share_pct": 0.06,
+            "yoy_growth_pct": 26.54
+          },
+          {
+            "name": "Galaxy Health Insurance",
+            "premium_cr": 32.44,
+            "prior_premium_cr": 7.72,
+            "market_share_pct": 0.05,
+            "yoy_growth_pct": 320.21
+          },
+          {
+            "name": "Narayana Health Insurance",
+            "premium_cr": 19.24,
+            "prior_premium_cr": 1.09,
+            "market_share_pct": 0.03,
+            "yoy_growth_pct": 1665.14
+          },
+          {
+            "name": "Kshema General Insurance",
+            "premium_cr": 18.43,
+            "prior_premium_cr": 345.63,
+            "market_share_pct": 0.03,
+            "yoy_growth_pct": -94.67
+          },
+          {
+            "name": "कीवी जनरल इंश्योरेंस Limited",
+            "premium_cr": 0.02,
+            "prior_premium_cr": 0,
+            "market_share_pct": 0.0,
+            "yoy_growth_pct": 0
+          },
+          {
+            "name": "Agriculture Insurance Company of India",
+            "premium_cr": -89.56,
+            "prior_premium_cr": 27.88,
+            "market_share_pct": -0.15,
+            "yoy_growth_pct": -421.23
           }
         ],
         "total_premium_cr": 60594.06,
-        "total_growth_pct": 12.59
+        "total_growth_pct": 8.49,
+        "filename_month": "2026-05",
+        "month_source": "filename"
+      },
+      {
+        "month": "2026-06",
+        "month_label": "Jun 2026",
+        "fiscal_year": "FY2026-27",
+        "period_type": "cumulative_ytd",
+        "source_file": "NonLife_GDP_June2026.pdf",
+        "generated_at": "2026-07-08 08:43:54",
+        "insurers": [
+          {
+            "name": "New India Assurance",
+            "premium_cr": 12700.73,
+            "prior_premium_cr": 12299.49,
+            "market_share_pct": 14.46,
+            "yoy_growth_pct": 3.3
+          },
+          {
+            "name": "ICICI Lombard General Insurance",
+            "premium_cr": 8317.87,
+            "prior_premium_cr": 7734.84,
+            "market_share_pct": 9.47,
+            "yoy_growth_pct": 7.5
+          },
+          {
+            "name": "Tata AIG General Insurance",
+            "premium_cr": 6558.64,
+            "prior_premium_cr": 4886.46,
+            "market_share_pct": 7.47,
+            "yoy_growth_pct": 34.2
+          },
+          {
+            "name": "Oriental Insurance",
+            "premium_cr": 6246.73,
+            "prior_premium_cr": 5843.18,
+            "market_share_pct": 7.11,
+            "yoy_growth_pct": 6.9
+          },
+          {
+            "name": "Bajaj Allianz General Insurance",
+            "premium_cr": 5768.71,
+            "prior_premium_cr": 5170.5,
+            "market_share_pct": 6.57,
+            "yoy_growth_pct": 11.6
+          },
+          {
+            "name": "United India Insurance",
+            "premium_cr": 5725.79,
+            "prior_premium_cr": 5665.69,
+            "market_share_pct": 6.52,
+            "yoy_growth_pct": 1.1
+          },
+          {
+            "name": "Star Health & Allied Insurance",
+            "premium_cr": 4287.09,
+            "prior_premium_cr": 3597.07,
+            "market_share_pct": 4.88,
+            "yoy_growth_pct": 19.2
+          },
+          {
+            "name": "HDFC ERGO General Insurance",
+            "premium_cr": 4125.28,
+            "prior_premium_cr": 3420.65,
+            "market_share_pct": 4.7,
+            "yoy_growth_pct": 20.6
+          },
+          {
+            "name": "National Insurance Company",
+            "premium_cr": 4097.52,
+            "prior_premium_cr": 3969.25,
+            "market_share_pct": 4.67,
+            "yoy_growth_pct": 3.2
+          },
+          {
+            "name": "SBI General Insurance",
+            "premium_cr": 3506.27,
+            "prior_premium_cr": 3163.07,
+            "market_share_pct": 3.99,
+            "yoy_growth_pct": 10.9
+          },
+          {
+            "name": "IndusInd General Insurance",
+            "premium_cr": 2955.09,
+            "prior_premium_cr": 3367.09,
+            "market_share_pct": 3.36,
+            "yoy_growth_pct": -12.2
+          },
+          {
+            "name": "Care Health Insurance",
+            "premium_cr": 2927.15,
+            "prior_premium_cr": 2049.44,
+            "market_share_pct": 3.33,
+            "yoy_growth_pct": 42.8
+          },
+          {
+            "name": "Go Digit General Insurance",
+            "premium_cr": 2446.76,
+            "prior_premium_cr": 2507.34,
+            "market_share_pct": 2.79,
+            "yoy_growth_pct": -2.4
+          },
+          {
+            "name": "IFFCO-Tokio General Insurance",
+            "premium_cr": 2229.85,
+            "prior_premium_cr": 2023.13,
+            "market_share_pct": 2.54,
+            "yoy_growth_pct": 10.2
+          },
+          {
+            "name": "Niva Bupa Health Insurance",
+            "premium_cr": 2149.96,
+            "prior_premium_cr": 1631.9,
+            "market_share_pct": 2.45,
+            "yoy_growth_pct": 31.7
+          },
+          {
+            "name": "Aditya Birla Health Insurance",
+            "premium_cr": 2005.36,
+            "prior_premium_cr": 1326.65,
+            "market_share_pct": 2.28,
+            "yoy_growth_pct": 51.2
+          },
+          {
+            "name": "Cholamandalam MS General Insurance",
+            "premium_cr": 1859.89,
+            "prior_premium_cr": 1812.15,
+            "market_share_pct": 2.12,
+            "yoy_growth_pct": 2.6
+          },
+          {
+            "name": "Universal Sompo General Insurance",
+            "premium_cr": 1750.62,
+            "prior_premium_cr": 1311.45,
+            "market_share_pct": 1.99,
+            "yoy_growth_pct": 33.5
+          },
+          {
+            "name": "Royal Sundaram General Insurance",
+            "premium_cr": 1285.05,
+            "prior_premium_cr": 1160.24,
+            "market_share_pct": 1.46,
+            "yoy_growth_pct": 10.8
+          },
+          {
+            "name": "Shriram General Insurance",
+            "premium_cr": 1179.71,
+            "prior_premium_cr": 960.38,
+            "market_share_pct": 1.34,
+            "yoy_growth_pct": 22.8
+          },
+          {
+            "name": "General Central Insurance",
+            "premium_cr": 1175.0,
+            "prior_premium_cr": 1230.36,
+            "market_share_pct": 1.34,
+            "yoy_growth_pct": -4.5
+          },
+          {
+            "name": "Magma General Insurance",
+            "premium_cr": 867.78,
+            "prior_premium_cr": 896.16,
+            "market_share_pct": 0.99,
+            "yoy_growth_pct": -3.2
+          },
+          {
+            "name": "Liberty General Insurance",
+            "premium_cr": 762.47,
+            "prior_premium_cr": 620.41,
+            "market_share_pct": 0.87,
+            "yoy_growth_pct": 22.9
+          },
+          {
+            "name": "Acko General Insurance",
+            "premium_cr": 739.67,
+            "prior_premium_cr": 526.97,
+            "market_share_pct": 0.84,
+            "yoy_growth_pct": 40.4
+          },
+          {
+            "name": "ManipalCigna Health Insurance",
+            "premium_cr": 704.3,
+            "prior_premium_cr": 532.0,
+            "market_share_pct": 0.8,
+            "yoy_growth_pct": 32.4
+          },
+          {
+            "name": "Zurich Kotak General Insurance",
+            "premium_cr": 624.92,
+            "prior_premium_cr": 574.12,
+            "market_share_pct": 0.71,
+            "yoy_growth_pct": 8.8
+          },
+          {
+            "name": "Zuno General Insurance",
+            "premium_cr": 401.72,
+            "prior_premium_cr": 248.49,
+            "market_share_pct": 0.46,
+            "yoy_growth_pct": 61.7
+          },
+          {
+            "name": "ECGC Limited",
+            "premium_cr": 344.46,
+            "prior_premium_cr": 321.66,
+            "market_share_pct": 0.39,
+            "yoy_growth_pct": 7.1
+          },
+          {
+            "name": "Galaxy Health Insurance",
+            "premium_cr": 61.23,
+            "prior_premium_cr": 12.28,
+            "market_share_pct": 0.07,
+            "yoy_growth_pct": 398.6
+          },
+          {
+            "name": "Raheja QBE General Insurance",
+            "premium_cr": 57.46,
+            "prior_premium_cr": 43.94,
+            "market_share_pct": 0.07,
+            "yoy_growth_pct": 30.8
+          },
+          {
+            "name": "Navi General Insurance",
+            "premium_cr": 56.39,
+            "prior_premium_cr": 33.68,
+            "market_share_pct": 0.06,
+            "yoy_growth_pct": 67.4
+          },
+          {
+            "name": "Narayana Health Insurance",
+            "premium_cr": 26.17,
+            "prior_premium_cr": 1.72,
+            "market_share_pct": 0.03,
+            "yoy_growth_pct": 1421.5
+          },
+          {
+            "name": "Kshema General Insurance",
+            "premium_cr": 25.19,
+            "prior_premium_cr": 281.05,
+            "market_share_pct": 0.03,
+            "yoy_growth_pct": -91.0
+          },
+          {
+            "name": "Kiwi General Insurance",
+            "premium_cr": 1.9,
+            "prior_premium_cr": 0,
+            "market_share_pct": 0,
+            "yoy_growth_pct": 0.0
+          },
+          {
+            "name": "Agriculture Insurance Company of India",
+            "premium_cr": -147.32,
+            "prior_premium_cr": 101.59,
+            "market_share_pct": -0.17,
+            "yoy_growth_pct": -245.0
+          }
+        ],
+        "total_premium_cr": 87825.41,
+        "total_growth_pct": 10.72,
+        "filename_month": "2026-06",
+        "month_source": "filename"
       }
     ]
   },
   "life": {
     "monthly_data": [
       {
-        "month": "2026-01",
-        "insurers": [
-          {
-            "name": "Acko Life Insurance Limited",
-            "premium_cr": 158.36,
-            "market_share_pct": 0.04,
-            "yoy_growth_pct": 192.89
-          },
-          {
-            "name": "Aditya Birla Sun Life Insurance Company Limited",
-            "premium_cr": 9452.45,
-            "market_share_pct": 2.46,
-            "yoy_growth_pct": 8.71
-          },
-          {
-            "name": "Ageas Federal Life Insurance Company Limited",
-            "premium_cr": 1322.37,
-            "market_share_pct": 0.34,
-            "yoy_growth_pct": 11.51
-          },
-          {
-            "name": "Aviva Life Insurance Company India Limited",
-            "premium_cr": 295.52,
-            "market_share_pct": 0.08,
-            "yoy_growth_pct": 8.57
-          },
-          {
-            "name": "Bajaj Allianz Life Insurance Company Limited",
-            "premium_cr": 12302.31,
-            "market_share_pct": 3.21,
-            "yoy_growth_pct": 17.5
-          },
-          {
-            "name": "Bandhan Life Insurance Limited",
-            "premium_cr": 397.92,
-            "market_share_pct": 0.1,
-            "yoy_growth_pct": 114.12
-          },
-          {
-            "name": "Bharti Axa Life Insurance Company Limited",
-            "premium_cr": 849.5,
-            "market_share_pct": 0.22,
-            "yoy_growth_pct": 40.64
-          },
-          {
-            "name": "Canara HSBC Life Insurance Company Limited",
-            "premium_cr": 3460.98,
-            "market_share_pct": 0.9,
-            "yoy_growth_pct": 29.18
-          },
-          {
-            "name": "CreditAccess Life Insurance Limited",
-            "premium_cr": 558.61,
-            "market_share_pct": 0.15,
-            "yoy_growth_pct": 265.38
-          },
-          {
-            "name": "Edelweiss Life Iinsurance Company Limited",
-            "premium_cr": 480.67,
-            "market_share_pct": 0.13,
-            "yoy_growth_pct": 4.52
-          },
-          {
-            "name": "Generali Central Life Insurance Company Limited",
-            "premium_cr": 1100.51,
-            "market_share_pct": 0.29,
-            "yoy_growth_pct": 16.81
-          },
-          {
-            "name": "Go Digit Life Insurance Limited",
-            "premium_cr": 1281.21,
-            "market_share_pct": 0.33,
-            "yoy_growth_pct": 32.51
-          },
-          {
-            "name": "HDFC Life Insurance Company Limited",
-            "premium_cr": 31033.81,
-            "market_share_pct": 8.09,
-            "yoy_growth_pct": 7.43
-          },
-          {
-            "name": "ICICI Prudential Life Insurance Company Limited",
-            "premium_cr": 19228.63,
-            "market_share_pct": 5.01,
-            "yoy_growth_pct": 2.42
-          },
-          {
-            "name": "IndiaFirst Life Insurance Company Limited",
-            "premium_cr": 2976.73,
-            "market_share_pct": 0.78,
-            "yoy_growth_pct": 14.33
-          },
-          {
-            "name": "Kotak Mahindra Life Insurance Company Limited",
-            "premium_cr": 7765.19,
-            "market_share_pct": 2.02,
-            "yoy_growth_pct": 12.49
-          },
-          {
-            "name": "Axis Max Life Insurance Limited",
-            "premium_cr": 12216.46,
-            "market_share_pct": 3.18,
-            "yoy_growth_pct": 20.75
-          },
-          {
-            "name": "PNB MetLife India Insurance Company Limited",
-            "premium_cr": 4761.86,
-            "market_share_pct": 1.24,
-            "yoy_growth_pct": 18.36
-          },
-          {
-            "name": "Pramerica Life Insurance Limited",
-            "premium_cr": 1290.81,
-            "market_share_pct": 0.34,
-            "yoy_growth_pct": 19.81
-          },
-          {
-            "name": "IndusInd Nippon Life Insurance Company Limited",
-            "premium_cr": 1230.18,
-            "market_share_pct": 0.32,
-            "yoy_growth_pct": 23.53
-          },
-          {
-            "name": "SBI Life Insurance Company Limited",
-            "premium_cr": 37655.38,
-            "market_share_pct": 9.81,
-            "yoy_growth_pct": 18.77
-          },
-          {
-            "name": "Shriram Life Insurance Company Limited",
-            "premium_cr": 1926.97,
-            "market_share_pct": 0.5,
-            "yoy_growth_pct": 1.04
-          },
-          {
-            "name": "Star Union Dai-ichi Life Insurance Company Limited",
-            "premium_cr": 4794.92,
-            "market_share_pct": 1.25,
-            "yoy_growth_pct": 26.39
-          },
-          {
-            "name": "Tata AIA Life Insurance Company Limited",
-            "premium_cr": 10145.97,
-            "market_share_pct": 2.64,
-            "yoy_growth_pct": 16.88
-          },
-          {
-            "name": "Life Insurance Corporation of India",
-            "premium_cr": 217153.83,
-            "market_share_pct": 56.57,
-            "yoy_growth_pct": 14.43
-          }
-        ],
-        "total_premium_cr": 383841.15,
-        "total_growth_pct": 14.82
-      },
-      {
         "month": "2026-02",
+        "month_label": "Feb 2026",
+        "fiscal_year": "FY2025-26",
+        "period_type": "cumulative_ytd",
+        "source_file": "Life_FirstYear_Feb2026.xlsx",
+        "generated_at": "2026-07-08 08:43:54",
         "insurers": [
           {
-            "name": "Acko Life Insurance Limited",
-            "premium_cr": 158.36,
-            "market_share_pct": 0.04,
-            "yoy_growth_pct": 192.89
+            "name": "Life Insurance Corporation of India",
+            "premium_cr": 217153.83,
+            "prior_premium_cr": 189762.58,
+            "market_share_pct": 56.57,
+            "yoy_growth_pct": 14.43
           },
           {
-            "name": "Aditya Birla Sun Life Insurance Company Limited",
-            "premium_cr": 9452.45,
-            "market_share_pct": 2.46,
-            "yoy_growth_pct": 8.71
-          },
-          {
-            "name": "Ageas Federal Life Insurance Company Limited",
-            "premium_cr": 1322.37,
-            "market_share_pct": 0.34,
-            "yoy_growth_pct": 11.51
-          },
-          {
-            "name": "Aviva Life Insurance Company India Limited",
-            "premium_cr": 295.52,
-            "market_share_pct": 0.08,
-            "yoy_growth_pct": 8.57
-          },
-          {
-            "name": "Bajaj Allianz Life Insurance Company Limited",
-            "premium_cr": 12302.31,
-            "market_share_pct": 3.21,
-            "yoy_growth_pct": 17.5
-          },
-          {
-            "name": "Bandhan Life Insurance Limited",
-            "premium_cr": 397.92,
-            "market_share_pct": 0.1,
-            "yoy_growth_pct": 114.12
-          },
-          {
-            "name": "Bharti Axa Life Insurance Company Limited",
-            "premium_cr": 849.5,
-            "market_share_pct": 0.22,
-            "yoy_growth_pct": 40.64
-          },
-          {
-            "name": "Canara HSBC Life Insurance Company Limited",
-            "premium_cr": 3460.98,
-            "market_share_pct": 0.9,
-            "yoy_growth_pct": 29.18
-          },
-          {
-            "name": "CreditAccess Life Insurance Limited",
-            "premium_cr": 558.61,
-            "market_share_pct": 0.15,
-            "yoy_growth_pct": 265.38
-          },
-          {
-            "name": "Edelweiss Life Iinsurance Company Limited",
-            "premium_cr": 480.67,
-            "market_share_pct": 0.13,
-            "yoy_growth_pct": 4.52
-          },
-          {
-            "name": "Generali Central Life Insurance Company Limited",
-            "premium_cr": 1100.51,
-            "market_share_pct": 0.29,
-            "yoy_growth_pct": 16.81
-          },
-          {
-            "name": "Go Digit Life Insurance Limited",
-            "premium_cr": 1281.21,
-            "market_share_pct": 0.33,
-            "yoy_growth_pct": 32.51
+            "name": "SBI Life Insurance Company Limited",
+            "premium_cr": 37655.38,
+            "prior_premium_cr": 31705.33,
+            "market_share_pct": 9.81,
+            "yoy_growth_pct": 18.77
           },
           {
             "name": "HDFC Life Insurance Company Limited",
             "premium_cr": 31033.81,
+            "prior_premium_cr": 28886.42,
             "market_share_pct": 8.09,
             "yoy_growth_pct": 7.43
           },
           {
             "name": "ICICI Prudential Life Insurance Company Limited",
             "premium_cr": 19228.63,
+            "prior_premium_cr": 18773.77,
             "market_share_pct": 5.01,
             "yoy_growth_pct": 2.42
           },
           {
-            "name": "IndiaFirst Life Insurance Company Limited",
-            "premium_cr": 2976.73,
-            "market_share_pct": 0.78,
-            "yoy_growth_pct": 14.33
-          },
-          {
-            "name": "Kotak Mahindra Life Insurance Company Limited",
-            "premium_cr": 7765.19,
-            "market_share_pct": 2.02,
-            "yoy_growth_pct": 12.49
+            "name": "Bajaj Allianz Life Insurance Company Limited",
+            "premium_cr": 12302.31,
+            "prior_premium_cr": 10469.77,
+            "market_share_pct": 3.21,
+            "yoy_growth_pct": 17.5
           },
           {
             "name": "Axis Max Life Insurance Limited",
             "premium_cr": 12216.46,
+            "prior_premium_cr": 10117.23,
             "market_share_pct": 3.18,
             "yoy_growth_pct": 20.75
           },
           {
-            "name": "PNB MetLife India Insurance Company Limited",
-            "premium_cr": 4761.86,
-            "market_share_pct": 1.24,
-            "yoy_growth_pct": 18.36
-          },
-          {
-            "name": "Pramerica Life Insurance Limited",
-            "premium_cr": 1290.81,
-            "market_share_pct": 0.34,
-            "yoy_growth_pct": 19.81
-          },
-          {
-            "name": "IndusInd Nippon Life Insurance Company Limited",
-            "premium_cr": 1230.18,
-            "market_share_pct": 0.32,
-            "yoy_growth_pct": 23.53
-          },
-          {
-            "name": "SBI Life Insurance Company Limited",
-            "premium_cr": 37655.38,
-            "market_share_pct": 9.81,
-            "yoy_growth_pct": 18.77
-          },
-          {
-            "name": "Shriram Life Insurance Company Limited",
-            "premium_cr": 1926.97,
-            "market_share_pct": 0.5,
-            "yoy_growth_pct": 1.04
-          },
-          {
-            "name": "Star Union Dai-ichi Life Insurance Company Limited",
-            "premium_cr": 4794.92,
-            "market_share_pct": 1.25,
-            "yoy_growth_pct": 26.39
-          },
-          {
             "name": "Tata AIA Life Insurance Company Limited",
             "premium_cr": 10145.97,
+            "prior_premium_cr": 8680.71,
             "market_share_pct": 2.64,
             "yoy_growth_pct": 16.88
           },
           {
-            "name": "Life Insurance Corporation of India",
-            "premium_cr": 217153.83,
-            "market_share_pct": 56.57,
-            "yoy_growth_pct": 14.43
+            "name": "Aditya Birla Sun Life Insurance Company Limited",
+            "premium_cr": 9452.45,
+            "prior_premium_cr": 8695.19,
+            "market_share_pct": 2.46,
+            "yoy_growth_pct": 8.71
+          },
+          {
+            "name": "Kotak Mahindra Life Insurance Company Limited",
+            "premium_cr": 7765.19,
+            "prior_premium_cr": 6902.86,
+            "market_share_pct": 2.02,
+            "yoy_growth_pct": 12.49
+          },
+          {
+            "name": "Star Union Dai-ichi Life Insurance Company Limited",
+            "premium_cr": 4794.92,
+            "prior_premium_cr": 3793.74,
+            "market_share_pct": 1.25,
+            "yoy_growth_pct": 26.39
+          },
+          {
+            "name": "PNB MetLife India Insurance Company Limited",
+            "premium_cr": 4761.86,
+            "prior_premium_cr": 4023.2,
+            "market_share_pct": 1.24,
+            "yoy_growth_pct": 18.36
+          },
+          {
+            "name": "Canara HSBC Life Insurance Company Limited",
+            "premium_cr": 3460.98,
+            "prior_premium_cr": 2679.11,
+            "market_share_pct": 0.9,
+            "yoy_growth_pct": 29.18
+          },
+          {
+            "name": "IndiaFirst Life Insurance Company Limited",
+            "premium_cr": 2976.73,
+            "prior_premium_cr": 2603.66,
+            "market_share_pct": 0.78,
+            "yoy_growth_pct": 14.33
+          },
+          {
+            "name": "Shriram Life Insurance Company Limited",
+            "premium_cr": 1926.97,
+            "prior_premium_cr": 1907.16,
+            "market_share_pct": 0.5,
+            "yoy_growth_pct": 1.04
+          },
+          {
+            "name": "Ageas Federal Life Insurance Company Limited",
+            "premium_cr": 1322.37,
+            "prior_premium_cr": 1185.89,
+            "market_share_pct": 0.34,
+            "yoy_growth_pct": 11.51
+          },
+          {
+            "name": "Pramerica Life Insurance Limited",
+            "premium_cr": 1290.81,
+            "prior_premium_cr": 1077.35,
+            "market_share_pct": 0.34,
+            "yoy_growth_pct": 19.81
+          },
+          {
+            "name": "Go Digit Life Insurance Limited",
+            "premium_cr": 1281.21,
+            "prior_premium_cr": 966.85,
+            "market_share_pct": 0.33,
+            "yoy_growth_pct": 32.51
+          },
+          {
+            "name": "IndusInd Nippon Life Insurance Company Limited",
+            "premium_cr": 1230.18,
+            "prior_premium_cr": 995.86,
+            "market_share_pct": 0.32,
+            "yoy_growth_pct": 23.53
+          },
+          {
+            "name": "Generali Central Life Insurance Company Limited",
+            "premium_cr": 1100.51,
+            "prior_premium_cr": 942.11,
+            "market_share_pct": 0.29,
+            "yoy_growth_pct": 16.81
+          },
+          {
+            "name": "Bharti Axa Life Insurance Company Limited",
+            "premium_cr": 849.5,
+            "prior_premium_cr": 604.01,
+            "market_share_pct": 0.22,
+            "yoy_growth_pct": 40.64
+          },
+          {
+            "name": "CreditAccess Life Insurance Limited",
+            "premium_cr": 558.61,
+            "prior_premium_cr": 152.88,
+            "market_share_pct": 0.15,
+            "yoy_growth_pct": 265.38
+          },
+          {
+            "name": "Edelweiss Life Iinsurance Company Limited",
+            "premium_cr": 480.67,
+            "prior_premium_cr": 459.88,
+            "market_share_pct": 0.13,
+            "yoy_growth_pct": 4.52
+          },
+          {
+            "name": "Bandhan Life Insurance Limited",
+            "premium_cr": 397.92,
+            "prior_premium_cr": 185.84,
+            "market_share_pct": 0.1,
+            "yoy_growth_pct": 114.12
+          },
+          {
+            "name": "Aviva Life Insurance Company India Limited",
+            "premium_cr": 295.52,
+            "prior_premium_cr": 272.2,
+            "market_share_pct": 0.08,
+            "yoy_growth_pct": 8.57
+          },
+          {
+            "name": "Acko Life Insurance Limited",
+            "premium_cr": 158.36,
+            "prior_premium_cr": 54.07,
+            "market_share_pct": 0.04,
+            "yoy_growth_pct": 192.89
           }
         ],
         "total_premium_cr": 383841.15,
-        "total_growth_pct": 14.82
+        "total_growth_pct": 14.27,
+        "filename_month": "2026-02",
+        "header_month": "2026-02",
+        "month_source": "workbook_header",
+        "extraction_notes": [
+          "Duplicate life month 2026-02: kept Life_FirstYear_Feb2026.xlsx and dropped Life_FirstYear_Jan2026.xlsx"
+        ]
       },
       {
         "month": "2026-03",
+        "month_label": "Mar 2026",
+        "fiscal_year": "FY2025-26",
+        "period_type": "cumulative_ytd",
+        "source_file": "Life_FirstYear_March2026.xlsx",
+        "generated_at": "2026-07-08 08:43:54",
         "insurers": [
           {
-            "name": "Acko Life Insurance",
-            "premium_cr": 184.38,
-            "market_share_pct": 0.04,
-            "yoy_growth_pct": 189.69
+            "name": "Life Insurance Corporation of India",
+            "premium_cr": 260464.06,
+            "prior_premium_cr": 226669.91,
+            "market_share_pct": 56.66,
+            "yoy_growth_pct": 14.91
           },
           {
-            "name": "Aditya Birla Sun Life Insurance",
-            "premium_cr": 12590.26,
-            "market_share_pct": 2.74,
-            "yoy_growth_pct": 23.2
-          },
-          {
-            "name": "Ageas Federal Life Insurance",
-            "premium_cr": 1580.87,
-            "market_share_pct": 0.34,
-            "yoy_growth_pct": 18.13
-          },
-          {
-            "name": "Aviva Life Insurance",
-            "premium_cr": 350.91,
-            "market_share_pct": 0.08,
-            "yoy_growth_pct": 10.61
-          },
-          {
-            "name": "Bajaj Allianz Life Insurance",
-            "premium_cr": 14585.82,
-            "market_share_pct": 3.17,
-            "yoy_growth_pct": 18.66
-          },
-          {
-            "name": "Bandhan Life Insurance",
-            "premium_cr": 487.04,
-            "market_share_pct": 0.11,
-            "yoy_growth_pct": 109.32
-          },
-          {
-            "name": "Bharti AXA Life Insurance",
-            "premium_cr": 1068.59,
-            "market_share_pct": 0.23,
-            "yoy_growth_pct": 44.07
-          },
-          {
-            "name": "Canara HSBC Life Insurance",
-            "premium_cr": 3846.86,
-            "market_share_pct": 0.84,
-            "yoy_growth_pct": 25.91
-          },
-          {
-            "name": "CreditAccess Life Insurance",
-            "premium_cr": 625.55,
-            "market_share_pct": 0.14,
-            "yoy_growth_pct": 224.16
-          },
-          {
-            "name": "Edelweiss Life Insurance",
-            "premium_cr": 639.35,
-            "market_share_pct": 0.14,
-            "yoy_growth_pct": 5.34
-          },
-          {
-            "name": "Generali Central Life Insurance",
-            "premium_cr": 1482.94,
-            "market_share_pct": 0.32,
-            "yoy_growth_pct": 24.39
-          },
-          {
-            "name": "Go Digit Life Insurance",
-            "premium_cr": 1472.52,
-            "market_share_pct": 0.32,
-            "yoy_growth_pct": 37.77
+            "name": "SBI Life Insurance",
+            "premium_cr": 42550.26,
+            "prior_premium_cr": 35576.67,
+            "market_share_pct": 9.26,
+            "yoy_growth_pct": 19.6
           },
           {
             "name": "HDFC Life Insurance",
             "premium_cr": 36646.4,
+            "prior_premium_cr": 33761.94,
             "market_share_pct": 7.97,
             "yoy_growth_pct": 8.54
           },
           {
             "name": "ICICI Prudential Life Insurance",
             "premium_cr": 24809.68,
+            "prior_premium_cr": 22583.49,
             "market_share_pct": 5.4,
             "yoy_growth_pct": 9.86
           },
           {
-            "name": "IndiaFirst Life Insurance",
-            "premium_cr": 3498.55,
-            "market_share_pct": 0.76,
-            "yoy_growth_pct": 17.83
-          },
-          {
-            "name": "Kotak Mahindra Life Insurance",
-            "premium_cr": 10184.21,
-            "market_share_pct": 2.22,
-            "yoy_growth_pct": 23.98
+            "name": "Bajaj Allianz Life Insurance",
+            "premium_cr": 14585.82,
+            "prior_premium_cr": 12292.58,
+            "market_share_pct": 3.17,
+            "yoy_growth_pct": 18.66
           },
           {
             "name": "Max Life Insurance",
             "premium_cr": 14501.25,
+            "prior_premium_cr": 12173.41,
             "market_share_pct": 3.15,
             "yoy_growth_pct": 19.12
           },
           {
-            "name": "PNB MetLife India Insurance",
-            "premium_cr": 5365.86,
-            "market_share_pct": 1.17,
-            "yoy_growth_pct": 14.29
-          },
-          {
-            "name": "Pramerica Life Insurance",
-            "premium_cr": 1469.81,
-            "market_share_pct": 0.32,
-            "yoy_growth_pct": 19.33
-          },
-          {
-            "name": "IndusInd Nippon Life Insurance",
-            "premium_cr": 1474.65,
-            "market_share_pct": 0.32,
-            "yoy_growth_pct": 18.48
-          },
-          {
-            "name": "SBI Life Insurance",
-            "premium_cr": 42550.26,
-            "market_share_pct": 9.26,
-            "yoy_growth_pct": 19.6
-          },
-          {
-            "name": "Shriram Life Insurance",
-            "premium_cr": 2425.08,
-            "market_share_pct": 0.53,
-            "yoy_growth_pct": 6.5
-          },
-          {
-            "name": "Star Union Dai-ichi Life Insurance",
-            "premium_cr": 5118.87,
-            "market_share_pct": 1.11,
-            "yoy_growth_pct": 19.14
+            "name": "Aditya Birla Sun Life Insurance",
+            "premium_cr": 12590.26,
+            "prior_premium_cr": 10219.23,
+            "market_share_pct": 2.74,
+            "yoy_growth_pct": 23.2
           },
           {
             "name": "Tata AIA Life Insurance",
             "premium_cr": 12289.62,
+            "prior_premium_cr": 10321.25,
             "market_share_pct": 2.67,
             "yoy_growth_pct": 19.07
           },
           {
-            "name": "LIC",
-            "premium_cr": 260464.06,
-            "market_share_pct": 56.66,
-            "yoy_growth_pct": 14.91
+            "name": "Kotak Mahindra Life Insurance",
+            "premium_cr": 10184.21,
+            "prior_premium_cr": 8214.37,
+            "market_share_pct": 2.22,
+            "yoy_growth_pct": 23.98
+          },
+          {
+            "name": "PNB MetLife India Insurance",
+            "premium_cr": 5365.86,
+            "prior_premium_cr": 4695.15,
+            "market_share_pct": 1.17,
+            "yoy_growth_pct": 14.29
+          },
+          {
+            "name": "Star Union Dai-ichi Life Insurance",
+            "premium_cr": 5118.87,
+            "prior_premium_cr": 4296.51,
+            "market_share_pct": 1.11,
+            "yoy_growth_pct": 19.14
+          },
+          {
+            "name": "Canara HSBC Life Insurance",
+            "premium_cr": 3846.86,
+            "prior_premium_cr": 3055.19,
+            "market_share_pct": 0.84,
+            "yoy_growth_pct": 25.91
+          },
+          {
+            "name": "IndiaFirst Life Insurance",
+            "premium_cr": 3498.55,
+            "prior_premium_cr": 2969.12,
+            "market_share_pct": 0.76,
+            "yoy_growth_pct": 17.83
+          },
+          {
+            "name": "Shriram Life Insurance",
+            "premium_cr": 2425.08,
+            "prior_premium_cr": 2277.04,
+            "market_share_pct": 0.53,
+            "yoy_growth_pct": 6.5
+          },
+          {
+            "name": "Ageas Federal Life Insurance",
+            "premium_cr": 1580.87,
+            "prior_premium_cr": 1338.28,
+            "market_share_pct": 0.34,
+            "yoy_growth_pct": 18.13
+          },
+          {
+            "name": "Generali Central Life Insurance",
+            "premium_cr": 1482.94,
+            "prior_premium_cr": 1192.19,
+            "market_share_pct": 0.32,
+            "yoy_growth_pct": 24.39
+          },
+          {
+            "name": "IndusInd Nippon Life Insurance",
+            "premium_cr": 1474.65,
+            "prior_premium_cr": 1244.64,
+            "market_share_pct": 0.32,
+            "yoy_growth_pct": 18.48
+          },
+          {
+            "name": "Go Digit Life Insurance",
+            "premium_cr": 1472.52,
+            "prior_premium_cr": 1068.81,
+            "market_share_pct": 0.32,
+            "yoy_growth_pct": 37.77
+          },
+          {
+            "name": "Pramerica Life Insurance",
+            "premium_cr": 1469.81,
+            "prior_premium_cr": 1231.75,
+            "market_share_pct": 0.32,
+            "yoy_growth_pct": 19.33
+          },
+          {
+            "name": "Bharti AXA Life Insurance",
+            "premium_cr": 1068.59,
+            "prior_premium_cr": 741.72,
+            "market_share_pct": 0.23,
+            "yoy_growth_pct": 44.07
+          },
+          {
+            "name": "Edelweiss Life Insurance",
+            "premium_cr": 639.35,
+            "prior_premium_cr": 606.92,
+            "market_share_pct": 0.14,
+            "yoy_growth_pct": 5.34
+          },
+          {
+            "name": "CreditAccess Life Insurance",
+            "premium_cr": 625.55,
+            "prior_premium_cr": 192.97,
+            "market_share_pct": 0.14,
+            "yoy_growth_pct": 224.16
+          },
+          {
+            "name": "Bandhan Life Insurance",
+            "premium_cr": 487.04,
+            "prior_premium_cr": 232.68,
+            "market_share_pct": 0.11,
+            "yoy_growth_pct": 109.32
+          },
+          {
+            "name": "Aviva Life Insurance",
+            "premium_cr": 350.91,
+            "prior_premium_cr": 317.26,
+            "market_share_pct": 0.08,
+            "yoy_growth_pct": 10.61
+          },
+          {
+            "name": "Acko Life Insurance Limited",
+            "premium_cr": 184.38,
+            "prior_premium_cr": 63.65,
+            "market_share_pct": 0.04,
+            "yoy_growth_pct": 189.69
           }
         ],
         "total_premium_cr": 459713.41,
-        "total_growth_pct": 16.11
+        "total_growth_pct": 15.7,
+        "filename_month": "2026-03",
+        "header_month": "2026-03",
+        "month_source": "workbook_header"
       },
       {
         "month": "2026-05",
+        "month_label": "May 2026",
+        "fiscal_year": "FY2026-27",
+        "period_type": "cumulative_ytd",
+        "source_file": "Life_FirstYear_May2026.xlsx",
+        "generated_at": "2026-07-08 08:43:54",
         "insurers": [
           {
-            "name": "Acko Life Insurance Limited",
-            "premium_cr": 37.74,
-            "market_share_pct": 0.06,
-            "yoy_growth_pct": 211.97
+            "name": "Life Insurance Corporation of India",
+            "premium_cr": 37824.26,
+            "prior_premium_cr": 32015.68,
+            "market_share_pct": 60.44,
+            "yoy_growth_pct": 18.14
           },
           {
-            "name": "Aditya Birla Sun Life Insurance Company Limited",
-            "premium_cr": 1154.85,
-            "market_share_pct": 1.85,
-            "yoy_growth_pct": 33.18
-          },
-          {
-            "name": "Ageas Federal Life Insurance Company Limited",
-            "premium_cr": 161.33,
-            "market_share_pct": 0.26,
-            "yoy_growth_pct": 31.72
-          },
-          {
-            "name": "Aviva Life Insurance Company India Limited",
-            "premium_cr": 55.66,
-            "market_share_pct": 0.09,
-            "yoy_growth_pct": 21.66
-          },
-          {
-            "name": "Bajaj Allianz Life Insurance Company Limited",
-            "premium_cr": 2172.93,
-            "market_share_pct": 3.47,
-            "yoy_growth_pct": 48.36
-          },
-          {
-            "name": "Bandhan Life Insurance Limited",
-            "premium_cr": 53.34,
-            "market_share_pct": 0.09,
-            "yoy_growth_pct": 46.39
-          },
-          {
-            "name": "Bharti Axa Life Insurance Company Limited",
-            "premium_cr": 116.94,
-            "market_share_pct": 0.19,
-            "yoy_growth_pct": 24.19
-          },
-          {
-            "name": "Canara HSBC Life Insurance Company Limited",
-            "premium_cr": 373.78,
-            "market_share_pct": 0.6,
-            "yoy_growth_pct": 33.15
-          },
-          {
-            "name": "CreditAccess Life Insurance Limited",
-            "premium_cr": 54.24,
-            "market_share_pct": 0.09,
-            "yoy_growth_pct": 71.65
-          },
-          {
-            "name": "Edelweiss Life Iinsurance Company Limited",
-            "premium_cr": 39.22,
-            "market_share_pct": 0.06,
-            "yoy_growth_pct": 0.43
-          },
-          {
-            "name": "Generali Central Life Insurance Company Limited",
-            "premium_cr": 104.04,
-            "market_share_pct": 0.17,
-            "yoy_growth_pct": -5.93
-          },
-          {
-            "name": "Go Digit Life Insurance Limited",
-            "premium_cr": 274.35,
-            "market_share_pct": 0.44,
-            "yoy_growth_pct": 33.54
+            "name": "SBI Life Insurance Company Limited",
+            "premium_cr": 5709.34,
+            "prior_premium_cr": 4644.38,
+            "market_share_pct": 9.12,
+            "yoy_growth_pct": 22.93
           },
           {
             "name": "HDFC Life Insurance Company Limited",
             "premium_cr": 5108.52,
+            "prior_premium_cr": 4965.93,
             "market_share_pct": 8.16,
             "yoy_growth_pct": 2.87
           },
           {
             "name": "ICICI Prudential Life Insurance Company Limited",
             "premium_cr": 2899.04,
+            "prior_premium_cr": 2439.29,
             "market_share_pct": 4.63,
             "yoy_growth_pct": 18.85
           },
           {
-            "name": "IndiaFirst Life Insurance Company Limited",
-            "premium_cr": 262.97,
-            "market_share_pct": 0.42,
-            "yoy_growth_pct": 3.35
-          },
-          {
-            "name": "Kotak Mahindra Life Insurance Company Limited",
-            "premium_cr": 1165.89,
-            "market_share_pct": 1.86,
-            "yoy_growth_pct": 41.48
+            "name": "Bajaj Allianz Life Insurance Company Limited",
+            "premium_cr": 2172.93,
+            "prior_premium_cr": 1464.62,
+            "market_share_pct": 3.47,
+            "yoy_growth_pct": 48.36
           },
           {
             "name": "Axis Max Life Insurance Limited",
             "premium_cr": 1650.91,
+            "prior_premium_cr": 1437.89,
             "market_share_pct": 2.64,
             "yoy_growth_pct": 14.81
           },
           {
-            "name": "PNB MetLife India Insurance Company Limited",
-            "premium_cr": 656.15,
-            "market_share_pct": 1.05,
-            "yoy_growth_pct": 33.78
-          },
-          {
-            "name": "Pramerica Life Insurance Limited",
-            "premium_cr": 287.72,
-            "market_share_pct": 0.46,
-            "yoy_growth_pct": 31.21
-          },
-          {
-            "name": "IndusInd Nippon Life Insurance Company Limited",
-            "premium_cr": 211.78,
-            "market_share_pct": 0.34,
-            "yoy_growth_pct": 41.03
-          },
-          {
-            "name": "SBI Life Insurance Company Limited",
-            "premium_cr": 5709.34,
-            "market_share_pct": 9.12,
-            "yoy_growth_pct": 22.93
-          },
-          {
-            "name": "Shriram Life Insurance Company Limited",
-            "premium_cr": 309.48,
-            "market_share_pct": 0.49,
-            "yoy_growth_pct": 29.43
-          },
-          {
-            "name": "Star Union Dai-ichi Life Insurance Company Limited",
-            "premium_cr": 385.15,
-            "market_share_pct": 0.62,
-            "yoy_growth_pct": 36.98
-          },
-          {
             "name": "Tata AIA Life Insurance Company Limited",
             "premium_cr": 1511.58,
+            "prior_premium_cr": 1155.43,
             "market_share_pct": 2.42,
             "yoy_growth_pct": 30.82
           },
           {
-            "name": "Life Insurance Corporation of India",
-            "premium_cr": 37824.26,
-            "market_share_pct": 60.44,
-            "yoy_growth_pct": 18.14
+            "name": "Kotak Mahindra Life Insurance Company Limited",
+            "premium_cr": 1165.89,
+            "prior_premium_cr": 824.06,
+            "market_share_pct": 1.86,
+            "yoy_growth_pct": 41.48
+          },
+          {
+            "name": "Aditya Birla Sun Life Insurance Company Limited",
+            "premium_cr": 1154.85,
+            "prior_premium_cr": 867.13,
+            "market_share_pct": 1.85,
+            "yoy_growth_pct": 33.18
+          },
+          {
+            "name": "PNB MetLife India Insurance Company Limited",
+            "premium_cr": 656.15,
+            "prior_premium_cr": 490.46,
+            "market_share_pct": 1.05,
+            "yoy_growth_pct": 33.78
+          },
+          {
+            "name": "Star Union Dai-ichi Life Insurance Company Limited",
+            "premium_cr": 385.15,
+            "prior_premium_cr": 281.18,
+            "market_share_pct": 0.62,
+            "yoy_growth_pct": 36.98
+          },
+          {
+            "name": "Canara HSBC Life Insurance Company Limited",
+            "premium_cr": 373.78,
+            "prior_premium_cr": 280.73,
+            "market_share_pct": 0.6,
+            "yoy_growth_pct": 33.15
+          },
+          {
+            "name": "Shriram Life Insurance Company Limited",
+            "premium_cr": 309.48,
+            "prior_premium_cr": 239.11,
+            "market_share_pct": 0.49,
+            "yoy_growth_pct": 29.43
+          },
+          {
+            "name": "Pramerica Life Insurance Limited",
+            "premium_cr": 287.72,
+            "prior_premium_cr": 219.28,
+            "market_share_pct": 0.46,
+            "yoy_growth_pct": 31.21
+          },
+          {
+            "name": "Go Digit Life Insurance Limited",
+            "premium_cr": 274.35,
+            "prior_premium_cr": 205.44,
+            "market_share_pct": 0.44,
+            "yoy_growth_pct": 33.54
+          },
+          {
+            "name": "IndiaFirst Life Insurance Company Limited",
+            "premium_cr": 262.97,
+            "prior_premium_cr": 254.44,
+            "market_share_pct": 0.42,
+            "yoy_growth_pct": 3.35
+          },
+          {
+            "name": "IndusInd Nippon Life Insurance Company Limited",
+            "premium_cr": 211.78,
+            "prior_premium_cr": 150.17,
+            "market_share_pct": 0.34,
+            "yoy_growth_pct": 41.03
+          },
+          {
+            "name": "Ageas Federal Life Insurance Company Limited",
+            "premium_cr": 161.33,
+            "prior_premium_cr": 122.48,
+            "market_share_pct": 0.26,
+            "yoy_growth_pct": 31.72
+          },
+          {
+            "name": "Bharti Axa Life Insurance Company Limited",
+            "premium_cr": 116.94,
+            "prior_premium_cr": 94.17,
+            "market_share_pct": 0.19,
+            "yoy_growth_pct": 24.19
+          },
+          {
+            "name": "Generali Central Life Insurance Company Limited",
+            "premium_cr": 104.04,
+            "prior_premium_cr": 110.6,
+            "market_share_pct": 0.17,
+            "yoy_growth_pct": -5.93
+          },
+          {
+            "name": "Aviva Life Insurance Company India Limited",
+            "premium_cr": 55.66,
+            "prior_premium_cr": 45.75,
+            "market_share_pct": 0.09,
+            "yoy_growth_pct": 21.66
+          },
+          {
+            "name": "CreditAccess Life Insurance Limited",
+            "premium_cr": 54.24,
+            "prior_premium_cr": 31.6,
+            "market_share_pct": 0.09,
+            "yoy_growth_pct": 71.65
+          },
+          {
+            "name": "Bandhan Life Insurance Limited",
+            "premium_cr": 53.34,
+            "prior_premium_cr": 36.44,
+            "market_share_pct": 0.09,
+            "yoy_growth_pct": 46.39
+          },
+          {
+            "name": "Edelweiss Life Iinsurance Company Limited",
+            "premium_cr": 39.22,
+            "prior_premium_cr": 39.06,
+            "market_share_pct": 0.06,
+            "yoy_growth_pct": 0.43
+          },
+          {
+            "name": "Acko Life Insurance Limited",
+            "premium_cr": 37.74,
+            "prior_premium_cr": 12.1,
+            "market_share_pct": 0.06,
+            "yoy_growth_pct": 211.97
           }
         ],
         "total_premium_cr": 62581.22,
-        "total_growth_pct": 20.1
+        "total_growth_pct": 19.37,
+        "filename_month": "2026-05",
+        "header_month": "2026-05",
+        "month_source": "workbook_header"
       }
     ]
   },
