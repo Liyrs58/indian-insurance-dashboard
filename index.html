@@ -3,141 +3,364 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IRDAI · Indian Insurance Market Dashboard</title>
+  <title>IRDAI · Indian Insurance Terminal</title>
   <link rel="stylesheet" href="css/bloomberg.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="terminal">
 
-    <!-- Status Bar -->
-    <div class="status-bar">
-      <div class="title">IN<span>DIAN INSURANCE MARKET</span></div>
-      <div class="ticker">IRDAI · MARKET ANALYSIS</div>
-      <div class="time" id="clock">--:--:--</div>
-    </div>
-
-    <!-- Scrolling Ticker -->
-    <div class="ticker-bar">
-      <div class="ticker-content" id="ticker"></div>
-    </div>
-
-    <!-- KPI Row -->
-    <div class="grid-4">
-      <div class="kpi-card">
-        <div class="kpi-value green" id="total-premium">--</div>
-        <div class="kpi-label">Total Premium (USD Bn)</div>
-        <div class="kpi-sub">FY 2024</div>
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <span class="logo">IRDAI</span>
+        <span class="separator">|</span>
+        <span class="nav-item active" data-view="overview">OVERVIEW</span>
+        <span class="nav-item" data-view="life">LIFE</span>
+        <span class="nav-item" data-view="nonlife">NON-LIFE</span>
+        <span class="nav-item" data-view="compare">COMPARE</span>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-value amber" id="penetration">--</div>
-        <div class="kpi-label">Insurance Penetration (% GDP)</div>
-        <div class="kpi-sub">Global Avg: 7.0%</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value cyan" id="density">--</div>
-        <div class="kpi-label">Insurance Density (USD/capita)</div>
-        <div class="kpi-sub">Global Avg: $870</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-value purple" id="global-rank">--</div>
-        <div class="kpi-label">Global Market Rank</div>
-        <div class="kpi-sub">Among ~180 countries</div>
+      <div class="top-bar-right">
+        <span class="status-dot"></span>
+        <span class="clock" id="clock">--:--:--</span>
       </div>
     </div>
 
-    <!-- Charts Row 1 -->
-    <div class="grid">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="label">Premium Growth Trend</span>
-          <span class="badge">2014–2024</span>
-        </div>
-        <div class="chart-container tall">
-          <canvas id="premiumTrend"></canvas>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-header">
-          <span class="label">Growth Rate YoY</span>
-          <span class="badge">% Change</span>
-        </div>
-        <div class="chart-container tall">
-          <canvas id="growthRates"></canvas>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-header">
-          <span class="label">Insurance Penetration vs Global Peers</span>
-          <span class="badge">% GDP</span>
-        </div>
-        <div class="chart-container tall">
-          <canvas id="globalCompare"></canvas>
-        </div>
-      </div>
+    <!-- Ticker -->
+    <div class="ticker-strip">
+      <div class="ticker-scroll" id="ticker"></div>
     </div>
 
-    <!-- Charts Row 2 -->
-    <div class="grid">
-      <div class="panel">
+    <!-- KPI Strip -->
+    <div class="kpi-strip" id="kpi-strip"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+      <!-- LEFT: Insurer Table -->
+      <div class="panel table-panel">
         <div class="panel-header">
-          <span class="label">Life Insurance — Market Share</span>
-          <span class="badge">Top 8 Players</span>
+          <span class="label" id="table-title">ALL INSURERS — RANKED BY PREMIUM</span>
+          <span class="badge" id="table-month">--</span>
         </div>
-        <div class="chart-container">
-          <canvas id="lifeShare"></canvas>
-        </div>
-        <div class="legend" id="lifeLegend"></div>
-      </div>
-      <div class="panel">
-        <div class="panel-header">
-          <span class="label">General Insurance — Market Share</span>
-          <span class="badge">Top 8 Players</span>
-        </div>
-        <div class="chart-container">
-          <canvas id="generalShare"></canvas>
-        </div>
-        <div class="legend" id="generalLegend"></div>
-      </div>
-      <div class="panel">
-        <div class="panel-header">
-          <span class="label">Key Players Snapshot</span>
-          <span class="badge">Premium (Cr INR)</span>
-        </div>
-        <div class="chart-container">
-          <canvas id="keyPlayers"></canvas>
+        <div class="table-scroll">
+          <table class="data-table" id="insurer-table">
+            <thead>
+              <tr>
+                <th class="rank">#</th>
+                <th class="name">Company</th>
+                <th class="num">Premium (₹Cr)</th>
+                <th class="num">Share %</th>
+                <th class="num">YoY</th>
+                <th class="bar-col"></th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
         </div>
       </div>
+
+      <!-- RIGHT: Charts -->
+      <div class="charts-col">
+        <div class="panel chart-panel">
+          <div class="panel-header">
+            <span class="label">PREMIUM TREND</span>
+            <span class="badge">Monthly</span>
+          </div>
+          <canvas id="trendChart"></canvas>
+        </div>
+        <div class="panel chart-panel">
+          <div class="panel-header">
+            <span class="label">MARKET CONCENTRATION</span>
+            <span class="badge">HHI Index</span>
+          </div>
+          <canvas id="concentrationChart"></canvas>
+        </div>
+        <div class="metrics-box" id="metrics-box"></div>
+      </div>
+
     </div>
 
-    <!-- Key Players Table -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="label">Key Industry Players</span>
-        <span class="badge">Data: IRDAI 2024</span>
-      </div>
-      <table class="data-table" id="players-table">
-        <thead>
-          <tr>
-            <th>Company</th>
-            <th>Type</th>
-            <th>Founded</th>
-            <th>Market Cap</th>
-            <th>Premium Income</th>
-            <th>Market Share</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <!-- Insight Box -->
-    <div class="tip-box">
-      <strong>INSIGHT:</strong> India's insurance penetration at 3.8% of GDP remains well below the global average of 7%, representing a <strong>$120B+</strong> addressable gap. The government's 'Insurance for All by 2047' initiative and IRDAI's liberalized FDI rules (74%) are expected to accelerate growth, particularly in the underpenetrated non-life segment. Paytm Insurance Broking operates at the intersection of digital distribution and this structural growth story.
+    <!-- Footer -->
+    <div class="footer">
+      <span>Source: IRDAI Flash Figures</span>
+      <span id="footer-date">--</span>
+      <span>Press [1] Overview [2] Life [3] Non-Life [4] Compare</span>
     </div>
 
   </div>
 
-  <script src="js/dashboard.js"></script>
+  <script>
+    // ── State ──────────────────────────────────────────────────────
+    let DATA = null;
+    let currentView = 'overview';
+    let charts = {};
+
+    // ── Load Data ──────────────────────────────────────────────────
+    fetch('data/irdai-processed.json')
+      .then(r => r.json())
+      .then(d => { DATA = d; init(); })
+      .catch(() => { document.body.innerHTML = '<div style="color:#F43F5E;font-family:monospace;padding:40px">DATA UNAVAILABLE</div>'; });
+
+    // ── Init ───────────────────────────────────────────────────────
+    function init() {
+      updateClock();
+      setInterval(updateClock, 1000);
+      renderKPI();
+      renderTicker();
+      renderView('overview');
+      setupNav();
+      setupKeys();
+    }
+
+    // ── Clock ──────────────────────────────────────────────────────
+    function updateClock() {
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    }
+
+    // ── KPI Strip ──────────────────────────────────────────────────
+    function renderKPI() {
+      const s = DATA.summary;
+      const html = `
+        <div class="kpi"><span class="kpi-label">TOTAL MARKET</span><span class="kpi-value blue">₹${(s.total_market_premium_cr/1000).toFixed(0)}K Cr</span></div>
+        <div class="kpi"><span class="kpi-label">LIFE</span><span class="kpi-value green">₹${(s.life_premium_cr/1000).toFixed(0)}K Cr</span></div>
+        <div class="kpi"><span class="kpi-label">NON-LIFE</span><span class="kpi-value amber">₹${(s.non_life_premium_cr/1000).toFixed(0)}K Cr</span></div>
+        <div class="kpi"><span class="kpi-label">PENETRATION</span><span class="kpi-value purple">${s.insurance_penetration_pct}%</span></div>
+        <div class="kpi"><span class="kpi-label">DENSITY</span><span class="kpi-value cyan">$${s.insurance_density_usd}</span></div>
+        <div class="kpi"><span class="kpi-label">GLOBAL AVG</span><span class="kpi-value">${s.global_penetration_avg_pct}%</span></div>
+      `;
+      document.getElementById('kpi-strip').innerHTML = html;
+    }
+
+    // ── Ticker ─────────────────────────────────────────────────────
+    function renderTicker() {
+      const latest = DATA.non_life.monthly_data[DATA.non_life.monthly_data.length - 1];
+      const items = latest.insurers.slice(0, 10).map(i =>
+        `<span class="ticker-item"><span class="ticker-name">${i.name}</span> <span class="ticker-price">${formatCr(i.premium_cr)}</span> <span class="${i.yoy_growth_pct >= 0 ? 'green' : 'red'}">${fmtPct(i.yoy_growth_pct)}</span></span>`
+      ).join('<span class="ticker-sep">│</span>');
+      document.getElementById('ticker').innerHTML = items;
+    }
+
+    // ── Navigation ─────────────────────────────────────────────────
+    function setupNav() {
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.addEventListener('click', () => {
+          document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+          el.classList.add('active');
+          renderView(el.dataset.view);
+        });
+      });
+    }
+
+    function setupKeys() {
+      document.addEventListener('keydown', e => {
+        if (e.key === '1') switchView('overview');
+        if (e.key === '2') switchView('life');
+        if (e.key === '3') switchView('nonlife');
+        if (e.key === '4') switchView('compare');
+      });
+    }
+
+    function switchView(view) {
+      document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.toggle('active', n.dataset.view === view);
+      });
+      renderView(view);
+    }
+
+    // ── Render View ────────────────────────────────────────────────
+    function renderView(view) {
+      currentView = view;
+      Object.values(charts).forEach(c => c.destroy());
+      charts = {};
+
+      if (view === 'overview') renderOverview();
+      else if (view === 'life') renderSegment('life');
+      else if (view === 'nonlife') renderSegment('nonlife');
+      else if (view === 'compare') renderCompare();
+    }
+
+    // ── Overview ───────────────────────────────────────────────────
+    function renderOverview() {
+      const latestLife = DATA.life.monthly_data[DATA.life.monthly_data.length - 1];
+      const latestNonLife = DATA.non_life.monthly_data[DATA.non_life.monthly_data.length - 1];
+      const allInsurers = [...latestLife.insurers.map(i => ({...i, segment: 'Life'})), ...latestNonLife.insurers.map(i => ({...i, segment: 'Non-Life'}))]
+        .sort((a, b) => b.premium_cr - a.premium_cr);
+
+      document.getElementById('table-title').textContent = 'ALL INSURERS — RANKED BY PREMIUM';
+      document.getElementById('table-month').textContent = latestNonLife.month;
+      renderTable(allInsurers);
+      renderTrendChart();
+      renderConcentrationChart(allInsurers.slice(0, 15));
+      renderMetrics([
+        { label: 'Total Life Premium', value: formatCr(latestLife.total_premium_cr), color: '#10B981' },
+        { label: 'Total Non-Life Premium', value: formatCr(latestNonLife.total_premium_cr), color: '#F59E0B' },
+        { label: 'Life YoY Growth', value: fmtPct(latestLife.total_growth_pct), color: latestLife.total_growth_pct >= 0 ? '#10B981' : '#F43F5E' },
+        { label: 'Non-Life YoY Growth', value: fmtPct(latestNonLife.total_growth_pct), color: latestNonLife.total_growth_pct >= 0 ? '#10B981' : '#F43F5E' },
+        { label: 'Top Life Player', value: latestLife.insurers[0]?.name || '--', color: '#ccc' },
+        { label: 'Top Non-Life Player', value: latestNonLife.insurers[0]?.name || '--', color: '#ccc' },
+      ]);
+    }
+
+    // ── Segment View ───────────────────────────────────────────────
+    function renderSegment(segment) {
+      const data = DATA[segment];
+      const latest = data.monthly_data[data.monthly_data.length - 1];
+      document.getElementById('table-title').textContent = segment === 'life' ? 'LIFE INSURANCE — ALL PLAYERS' : 'NON-LIFE INSURANCE — ALL PLAYERS';
+      document.getElementById('table-month').textContent = latest.month;
+      renderTable(latest.insurers);
+      renderTrendChart(segment);
+      renderConcentrationChart(latest.insurers.slice(0, 15));
+      renderMetrics([
+        { label: 'Total Premium', value: formatCr(latest.total_premium_cr), color: segment === 'life' ? '#10B981' : '#F59E0B' },
+        { label: 'YoY Growth', value: fmtPct(latest.total_growth_pct), color: latest.total_growth_pct >= 0 ? '#10B981' : '#F43F5E' },
+        { label: 'Top Player', value: latest.insurers[0]?.name || '--', color: '#ccc' },
+        { label: 'Top Share', value: `${latest.insurers[0]?.market_share_pct.toFixed(1)}%`, color: '#ccc' },
+        { label: 'Players', value: latest.insurers.length.toString(), color: '#7A85AA' },
+      ]);
+    }
+
+    // ── Compare View ───────────────────────────────────────────────
+    function renderCompare() {
+      const months = DATA.life.monthly_data.map(m => m.month.split(' ')[0].slice(0, 3));
+      const lifeTrend = DATA.life.monthly_data.map(m => m.total_premium_cr);
+      const nonLifeTrend = DATA.non_life.monthly_data.map(m => m.total_premium_cr);
+
+      document.getElementById('table-title').textContent = 'LIFE vs NON-LIFE — PREMIUM COMPARISON';
+      document.getElementById('table-month').textContent = 'Multi-month';
+
+      // Combined table
+      const rows = months.map((m, i) => ({
+        name: m,
+        premium_cr: lifeTrend[i],
+        market_share_pct: 0,
+        yoy_growth_pct: i > 0 ? ((lifeTrend[i] - lifeTrend[i-1]) / lifeTrend[i-1]) * 100 : 0,
+        segment: 'Life',
+        _nonlife: nonLifeTrend[i]
+      }));
+      renderTable(rows, true);
+
+      // Comparison chart
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      charts.trend = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: months,
+          datasets: [
+            { label: 'Life', data: lifeTrend, borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.3 },
+            { label: 'Non-Life', data: nonLifeTrend, borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.3 }
+          ]
+        },
+        options: chartOpts('₹ Cr')
+      });
+
+      renderConcentrationChart(DATA.life.monthly_data[DATA.life.monthly_data.length - 1].insurers.slice(0, 10));
+      renderMetrics([
+        { label: 'Life Premium', value: formatCr(lifeTrend[lifeTrend.length - 1]), color: '#10B981' },
+        { label: 'Non-Life Premium', value: formatCr(nonLifeTrend[nonLifeTrend.length - 1]), color: '#F59E0B' },
+        { label: 'Life Share', value: `${((lifeTrend[lifeTrend.length-1] / (lifeTrend[lifeTrend.length-1] + nonLifeTrend[nonLifeTrend.length-1])) * 100).toFixed(0)}%`, color: '#10B981' },
+        { label: 'Non-Life Share', value: `${((nonLifeTrend[nonLifeTrend.length-1] / (lifeTrend[lifeTrend.length-1] + nonLifeTrend[nonLifeTrend.length-1])) * 100).toFixed(0)}%`, color: '#F59E0B' },
+      ]);
+    }
+
+    // ── Table ──────────────────────────────────────────────────────
+    function renderTable(insurers, showNonLife = false) {
+      const maxPremium = Math.max(...insurers.map(i => i.premium_cr));
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = insurers.map((ins, idx) => {
+        const pct = (ins.premium_cr / maxPremium) * 100;
+        const color = ins.yoy_growth_pct >= 0 ? '#10B981' : '#F43F5E';
+        const extraCol = showNonLife ? `<td class="num" style="color:#F59E0B">${formatCr(ins._nonlife || 0)}</td>` : '';
+        return `<tr>
+          <td class="rank">${idx + 1}</td>
+          <td class="name">${ins.name}</td>
+          <td class="num">${formatCr(ins.premium_cr)}</td>
+          <td class="num">${ins.market_share_pct.toFixed(1)}%</td>
+          <td class="num" style="color:${color}">${fmtPct(ins.yoy_growth_pct)}</td>
+          ${extraCol}
+          <td class="bar-col"><div class="bar" style="width:${pct}%;background:${color}"></div></td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── Trend Chart ────────────────────────────────────────────────
+    function renderTrendChart(segment) {
+      const data = segment ? DATA[segment] : DATA.non_life;
+      const labels = data.monthly_data.map(m => m.month.split(' ')[0].slice(0, 3) + ' ' + m.month.split(' ')[1]?.slice(0, 2));
+      const values = data.monthly_data.map(m => m.total_premium_cr);
+      const color = segment === 'life' ? '#10B981' : segment === 'nonlife' ? '#F59E0B' : '#3B82F6';
+
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      charts.trend = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            borderColor: color,
+            backgroundColor: color + '15',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            pointBackgroundColor: color
+          }]
+        },
+        options: chartOpts('₹ Cr')
+      });
+    }
+
+    // ── Concentration Chart ────────────────────────────────────────
+    function renderConcentrationChart(insurers) {
+      const labels = insurers.map(i => i.name.length > 15 ? i.name.slice(0, 12) + '...' : i.name);
+      const values = insurers.map(i => i.market_share_pct);
+      const colors = ['#3B82F6','#10B981','#F59E0B','#EC4899','#8B5CF6','#06B6D4','#F43F5E','#84CC16','#6366F1','#14B8A6','#F97316','#A855F7','#22D3EE','#FB923C','#34D399'];
+
+      const ctx = document.getElementById('concentrationChart').getContext('2d');
+      charts.concentration = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            backgroundColor: colors.slice(0, values.length),
+            borderRadius: 2
+          }]
+        },
+        options: {
+          ...chartOpts('%'),
+          indexAxis: 'y',
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    // ── Metrics Box ────────────────────────────────────────────────
+    function renderMetrics(items) {
+      document.getElementById('metrics-box').innerHTML = items.map(m =>
+        `<div class="metric"><span class="metric-label">${m.label}</span><span class="metric-value" style="color:${m.color}">${m.value}</span></div>`
+      ).join('');
+    }
+
+    // ── Chart Opts ─────────────────────────────────────────────────
+    function chartOpts(unit) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: '#1F2A4D22' }, ticks: { color: '#555', font: { family: 'monospace', size: 9 } } },
+          y: { grid: { color: '#1F2A4D22' }, ticks: { color: '#555', font: { family: 'monospace', size: 9 }, callback: v => v >= 1000 ? (v/1000).toFixed(0) + 'K' : v + ' ' + unit } }
+        }
+      };
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────
+    function formatCr(val) {
+      if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L Cr`;
+      if (val >= 1000) return `₹${(val / 1000).toFixed(1)}K Cr`;
+      return `₹${val.toFixed(0)} Cr`;
+    }
+    function fmtPct(v) { return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`; }
+  </script>
 </body>
 </html>
