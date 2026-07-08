@@ -379,6 +379,7 @@ function init() {
   renderTicker();
   renderKPI();
   renderView('overview');
+  setInterval(refreshData, 300000);
   setupNav();
   setupKeys();
   setupCmd();
@@ -737,8 +738,14 @@ function updateDataStatus(state) {
   } else if (state === 'snapshot' && DATA && DATA._meta) {
     var ts = DATA._meta.research_as_of || DATA._meta.last_updated || DATA._meta.generated_at || 'unknown';
     var validation = DATA._meta.validation ? DATA._meta.validation.status : 'ok';
-    el.textContent = 'SNAPSHOT: ' + ts + (validation !== 'ok' ? ' · ' + validation.toUpperCase() : '');
-    var statusColor = validation === 'error' ? 'var(--red)' : (validation === 'warning' ? 'var(--amber)' : 'var(--green)');
+    var isStale = false;
+    if (ts && ts.length === 10 && ts.indexOf('-') === 4) {
+      var snapshotDate = new Date(ts + 'T00:00:00');
+      var daysOld = (Date.now() - snapshotDate.getTime()) / 86400000;
+      isStale = daysOld > 7;
+    }
+    el.textContent = 'SNAPSHOT: ' + ts + (validation !== 'ok' ? ' · ' + validation.toUpperCase() : '') + (isStale ? ' · STALE' : '');
+    var statusColor = validation === 'error' ? 'var(--red)' : (isStale ? 'var(--amber)' : (validation === 'warning' ? 'var(--amber)' : 'var(--green)'));
     el.style.color = statusColor;
     if (dot) dot.style.background = statusColor;
   } else {

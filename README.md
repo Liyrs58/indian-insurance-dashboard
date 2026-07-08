@@ -1,11 +1,21 @@
 # Indian Insurance Market Dashboard
 
-Market-terminal-inspired dashboard for Indian insurance industry data.
-It parses local IRDAI/Life Council/GIC source files, renders ranked insurer
-tables, comparable period views, trend charts, concentration analysis, and NSE
-stock-price context for listed insurers.
+Bloomberg-terminal-style dashboard for Indian insurance industry data.
+Parses IRDAI Flash Figures, Life Council, and GIC source files into ranked
+insurer tables, comparable-period views, trend charts, HHI concentration
+analysis, and live NSE stock prices for listed insurers.
 
 **Live:** https://liyrs58.github.io/indian-insurance-dashboard/
+
+## What This Demonstrates
+
+| Area | What It Shows |
+|------|---------------|
+| **Data Engineering** | Python pipeline parses Excel source files → validated JSON with schema enforcement, duplicate detection, period-type labelling, and audit metadata |
+| **Frontend Architecture** | Bloomberg-terminal-style grid layout, TradingView LightweightCharts, Tabulator tables, keyboard-driven navigation, responsive down to 500px |
+| **Real-Time Integration** | NSE stock prices fetched every hour via GitHub Actions, auto-refreshed in-browser every 5 minutes |
+| **Testing & Quality** | 8 contract tests (Node) for data integrity, source quality, label leakage, and interaction fixes — run in CI on every push |
+| **CI/CD** | GitHub Actions → GitHub Pages: auto-deploy on push + hourly scheduled stock refresh |
 
 ## Preview
 
@@ -24,7 +34,7 @@ python3 -m py_compile data/parse_irdai.py data/fetch_stocks.py
 
 The parser stores source freshness, selected report months, and validation
 warnings in `data/irdai-processed.json` under `_meta`. The dashboard shows a
-snapshot status instead of a live-feed claim.
+snapshot status with validation tier instead of a live-feed claim.
 
 ## Data Pipeline
 
@@ -52,4 +62,4 @@ when a matching life report is not yet available locally.
 - IBM Plex Mono — Monospaced UI font
 - Clearbit Logo API — Company logos in detail popups
 - Python (parse_irdai.py, fetch_stocks.py) — Data pipeline
-- GitHub Actions — Auto-deploy to GitHub Pages
+- GitHub Actions — Scheduled hourly stock refresh + auto-deploy to GitHub Pages
