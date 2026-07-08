@@ -1,0 +1,45 @@
+{
+  "fetched_at": "2026-07-08T07:02:10",
+  "prices": {
+    "HDFCLIFE.NS": {
+      "price": 572.65,
+      "currency": "INR",
+      "exchange": "NSI"
+    },
+    "ICICIPRULI.NS": {
+      "price": 490.35,
+      "currency": "INR",
+      "exchange": "NSI"
+    },
+    "SBILIFE.NS": {
+      "price": 1835.7,
+      "currency": "INR",
+      "exchange": "NSI"
+    },
+    "ICICIGI.NS": {
+      "price": 1822.4,
+      "currency": "INR",
+      "exchange": "NSI"
+    },
+    "NIACL.NS": {
+      "price": 184.23,
+      "currency": "INR",
+      "exchange": "NSI"
+    },
+    "STARHEALTH.NS": {
+      "price": 590.1,
+      "currency": "INR",
+      "exchange": "NSI"
+    },
+    "BAJAJFINSV.NS": {
+      "price": 1884.9,
+      "currency": "INR",
+      "exchange": "NSI"
+    },
+    "KOTAKBANK.NS": {
+      "price": 377.95,
+      "currency": "INR",
+      "exchange": "NSI"
+    }
+  }
+}

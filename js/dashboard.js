@@ -1,19 +1,119 @@
 // ─── State ──────────────────────────────────────────────────────────
+let STOCKS = null;
 let DATA = null;
 let currentView = 'overview';
 let table = null;
 let chart = null;
-let chartSeries = null;
+let chartSeries = [];
 let chartType = 'all';
+let resizeHandler = null;
+let renderedTabs = {};
+let showEMA = false;
+let emaSeries = null;
+
+// ─── Company Enrichment DB ──────────────────────────────────────────
+const COMPANY_DB = {
+  'LIC': { group:'LIC', founded:1956, ticker:'', rating:'AAA', segment:'Life', specialties:'Individual & group life, pension, health', desc:'Life Insurance Corporation of India — the country\'s largest insurer with majority market share. Government-owned.' },
+  'HDFC Life Insurance Company Limited': { group:'HDFC', founded:2000, ticker:'HDFCLIFE.NS', rating:'AAA', segment:'Life', specialties:'ULIPs, protection, retirement, savings', desc:'HDFC Life is a joint venture between HDFC and Standard Life Aberdeen. One of India\'s leading private life insurers.' },
+  'ICICI Prudential Life Insurance Company Limited': { group:'ICICI', founded:2001, ticker:'ICICIPRULI.NS', rating:'AAA', segment:'Life', specialties:'Protection, savings, retirement, health', desc:'ICICI Prudential Life is a joint venture between ICICI Bank and Prudential Corporation Holdings.' },
+  'SBI Life Insurance Company Limited': { group:'SBI', founded:2001, ticker:'SBILIFE.NS', rating:'AAA', segment:'Life', specialties:'Individual & group life, pension, unit-linked', desc:'SBI Life is a joint venture between State Bank of India and BNP Paribas Cardif.' },
+  'Bajaj Allianz Life Insurance Company Limited': { group:'Bajaj', founded:2001, ticker:'', rating:'AAA', segment:'Life', specialties:'ULIPs, savings, protection, retirement', desc:'A joint venture between Bajaj Finserv and Allianz SE.' },
+  'Max Life Insurance Company Limited': { group:'Max', founded:2000, ticker:'', rating:'AAA', segment:'Life', specialties:'Protection, savings, retirement, health', desc:'Max Life is a joint venture between Max Financial Services and Mitsui Sumitomo Insurance.' },
+  'Tata AIA Life Insurance Company Limited': { group:'Tata', founded:2001, ticker:'', rating:'AAA', segment:'Life', specialties:'Protection, savings, retirement, ULIPs', desc:'A joint venture between Tata Sons and AIA Group.' },
+  'Kotak Mahindra Life Insurance Company Limited': { group:'Kotak', founded:2001, ticker:'KOTAKBANK.NS', rating:'AAA', segment:'Life', specialties:'Savings, protection, retirement, health', desc:'Kotak Mahindra Life is a subsidiary of Kotak Mahindra Bank.' },
+  'Aditya Birla Sun Life Insurance Company Limited': { group:'Aditya Birla', founded:2000, ticker:'', rating:'AA+', segment:'Life', specialties:'ULIPs, savings, protection, retirement', desc:'A joint venture between Aditya Birla Group and Sun Life Financial.' },
+  'Reliance Nippon Life Insurance Company Limited': { group:'Reliance', founded:2001, ticker:'', rating:'AA+', segment:'Life', specialties:'Protection, savings, retirement, health', desc:'A joint venture between Reliance Capital and Nippon Life Insurance.' },
+  'ICICI Lombard General Insurance Company Limited': { group:'ICICI', founded:2001, ticker:'ICICIGI.NS', rating:'AAA', segment:'Non-Life', specialties:'Motor, health, travel, property, marine', desc:'India\'s leading private non-life insurer, a JV between ICICI Bank and Fairfax Financial.' },
+  'The New India Assurance Company Limited': { group:'Government', founded:1919, ticker:'NIACL.NS', rating:'AAA', segment:'Non-Life', specialties:'Motor, health, fire, marine, engineering', desc:'India\'s largest public sector non-life insurer, owned by Government of India.' },
+  'Star Health and Allied Insurance Company Limited': { group:'Star Health', founded:2006, ticker:'STARHEALTH.NS', rating:'AA+', segment:'Non-Life', specialties:'Health insurance, critical illness, personal accident', desc:'India\'s largest standalone health insurer.' },
+  'Bajaj Allianz General Insurance Company Limited': { group:'Bajaj', founded:2001, ticker:'BAJAJFINSV.NS', rating:'AAA', segment:'Non-Life', specialties:'Motor, health, travel, property, marine', desc:'A joint venture between Bajaj Finserv and Allianz SE.' },
+  'National Insurance Company Limited': { group:'Government', founded:1906, ticker:'', rating:'AA-', segment:'Non-Life', specialties:'Motor, health, fire, marine, engineering', desc:'Public sector general insurer under Government of India ownership.' },
+  'United India Insurance Company Limited': { group:'Government', founded:1938, ticker:'', rating:'AA-', segment:'Non-Life', specialties:'Motor, health, fire, marine, engineering', desc:'Public sector general insurer owned by Government of India.' },
+  'SBI General Insurance Company Limited': { group:'SBI', founded:2009, ticker:'', rating:'AAA', segment:'Non-Life', specialties:'Motor, health, travel, property', desc:'A joint venture between SBI and Insurance Australia Group (IAG).' },
+  'Tata AIG General Insurance Company Limited': { group:'Tata', founded:2001, ticker:'', rating:'AAA', segment:'Non-Life', specialties:'Motor, health, travel, marine, fire', desc:'A joint venture between Tata Sons and American International Group (AIG).' },
+  'Care Health Insurance Company Limited': { group:'', founded:2007, ticker:'', rating:'AA+', segment:'Non-Life', specialties:'Health insurance, critical illness, personal accident', desc:'Formerly Religare Health Insurance, a standalone health insurer.' },
+  'Go Digit General Insurance Limited': { group:'Go Digit', founded:2017, ticker:'DIGIT.NS', rating:'AA', segment:'Non-Life', specialties:'Motor, health, travel, property, cyber', desc:'Backed by Fairfax Group and backed by cricketer MS Dhoni. Digital-first insurer.' },
+  'Acko General Insurance Limited': { group:'Acko', founded:2017, ticker:'', rating:'AA', segment:'Non-Life', specialties:'Motor, health, travel, gadget, bike', desc:'India\'s first digital-only insurance company, backed by Narayana Murthy.' },
+  'Future Generali India Insurance Company Limited': { group:'Generali', founded:2008, ticker:'', rating:'AA', segment:'Non-Life', specialties:'Motor, health, travel, home, marine', desc:'A joint venture between Future Group and Generali Italia.' },
+  'Royal Sundaram General Insurance Company Limited': { group:'Sundaram', founded:2001, ticker:'', rating:'AA+', segment:'Non-Life', specialties:'Motor, health, travel, home, marine', desc:'A joint venture between Sundaram Finance and RSA Group.' },
+  'Cholamandalam MS General Insurance Company Limited': { group:'Murugappa', founded:2001, ticker:'', rating:'AA+', segment:'Non-Life', specialties:'Motor, health, travel, crop, marine', desc:'A joint venture between Murugappa Group and Mitsui Sumitomo Insurance.' },
+  'HDFC ERGO General Insurance Company Limited': { group:'HDFC', founded:2002, ticker:'', rating:'AAA', segment:'Non-Life', specialties:'Motor, health, travel, fire, marine', desc:'A joint venture between HDFC and ERGO (Munich Re Group).' },
+  'Reliance General Insurance Company Limited': { group:'Reliance', founded:2000, ticker:'', rating:'AA', segment:'Non-Life', specialties:'Motor, health, travel, property, marine', desc:'A subsidiary of Reliance Capital.' },
+  'Acko Life Insurance Limited': { group:'Acko', founded:2017, ticker:'', rating:'AA', segment:'Life', specialties:'Term life, digital-first life insurance', desc:'Digital life insurer, part of the Acko group.' },
+  'Pramerica Life Insurance Company Limited': { group:'Prudential US', founded:2004, ticker:'', rating:'AA+', segment:'Life', specialties:'Savings, protection, retirement, ULIPs', desc:'A joint venture between Prudential of the US and Dewan Housing Finance (DHFL).' },
+  'Shriram Life Insurance Company Limited': { group:'Shriram', founded:2005, ticker:'', rating:'AA', segment:'Life', specialties:'Savings, protection, rural insurance', desc:'A joint venture between Shriram Group and Sanlam Life Insurance.' },
+  'Canara HSBC Life Insurance Company Limited': { group:'Canara', founded:2008, ticker:'', rating:'AAA', segment:'Life', specialties:'Savings, protection, retirement, unit-linked', desc:'A joint venture between Canara Bank, HSBC Insurance, and Punjab National Bank.' },
+  'IndiaFirst Life Insurance Company Limited': { group:'BoB', founded:2009, ticker:'', rating:'AA+', segment:'Life', specialties:'Savings, protection, retirement', desc:'A joint venture between Bank of Baroda, Union Bank, and Carmel Point Investments.' },
+  'Edelweiss Tokio Life Insurance Company Limited': { group:'Edelweiss', founded:2011, ticker:'', rating:'AA', segment:'Life', specialties:'Protection, savings, retirement', desc:'A joint venture between Edelweiss Financial and Tokio Marine.' },
+  'Nippon India Life': { group:'Nippon', founded:2001, ticker:'', rating:'AA+', segment:'Life', specialties:'ULIPs, protection, savings, retirement', desc:'Part of Nippon Life Group.' },
+};
+
+function lookupCompany(name) {
+  if (!name) return null;
+  var n = name.trim();
+  if (COMPANY_DB[n]) return COMPANY_DB[n];
+  var lc = n.toLowerCase();
+  for (var key in COMPANY_DB) {
+    if (key.toLowerCase().indexOf(lc) !== -1 || lc.indexOf(key.toLowerCase()) !== -1) {
+      return COMPANY_DB[key];
+    }
+  }
+  return null;
+}
+
+var COMPANY_DOMAINS = {
+  'LIC':'licindia.in','HDFC Life Insurance Company Limited':'hdfclife.com',
+  'ICICI Prudential Life Insurance Company Limited':'iciciprulife.com',
+  'SBI Life Insurance Company Limited':'sbilife.co.in',
+  'ICICI Lombard General Insurance Company Limited':'icicilombard.com',
+  'The New India Assurance Company Limited':'newindia.co.in',
+  'Star Health and Allied Insurance Company Limited':'starhealth.in',
+  'Bajaj Allianz General Insurance Company Limited':'bajajallianz.com',
+  'National Insurance Company Limited':'nationalinsuranceindia.com',
+  'United India Insurance Company Limited':'uiic.co.in',
+  'Tata AIG General Insurance Company Limited':'tataaig.com',
+  'Go Digit General Insurance Limited':'godigit.com',
+  'Acko General Insurance Limited':'acko.com',
+  'HDFC ERGO General Insurance Company Limited':'hdfcergo.com',
+  'SBI General Insurance Company Limited':'sbigen.com',
+  'Max Life Insurance Company Limited':'maxlifeinsurance.com',
+  'Tata AIA Life Insurance Company Limited':'tataaia.com',
+  'Kotak Mahindra Life Insurance Company Limited':'kotaklifeinsurance.com',
+  'Care Health Insurance Company Limited':'careinsurance.com',
+  'Bajaj Allianz Life Insurance Company Limited':'bajajallianzlife.com',
+};
+
+function getCompanyLogo(name) {
+  if (!name) return '';
+  var domain = COMPANY_DOMAINS[name] || '';
+  if (!domain) {
+    var profile = lookupCompany(name);
+    var g = (profile && profile.group || '').toLowerCase().replace(/\s+/g, '');
+    if (g) domain = g + '.com';
+  }
+  return domain ? 'https://logo.clearbit.com/' + domain : '';
+}
+
+function getStockPrice(ticker) {
+  if (!STOCKS || !ticker || !STOCKS.prices[ticker]) return null;
+  return STOCKS.prices[ticker];
+}
+
+function fitChart() {
+  if (chart) chart.timeScale().fitContent();
+}
 
 // ─── Load ───────────────────────────────────────────────────────────
-fetch('data/irdai-processed.json')
-  .then(r => {
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.json();
+Promise.all([
+  fetch('data/irdai-processed.json').then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
+  fetch('data/stock-prices.json').then(function(r) { if (!r.ok) return null; return r.json(); }).catch(function() { return null; }),
+])
+  .then(function(results) {
+    DATA = results[0];
+    STOCKS = results[1];
+    init();
   })
-  .then(d => { DATA = d; init(); })
-  .catch(() => {
+  .catch(function() {
     document.getElementById('dataStatus').textContent = 'ERR';
     document.getElementById('dataStatus').style.color = 'var(--red)';
     document.querySelector('.status-dot').style.background = 'var(--red)';
@@ -21,6 +121,7 @@ fetch('data/irdai-processed.json')
 
 // ─── Init ───────────────────────────────────────────────────────────
 function init() {
+  document.body.classList.remove('loading');
   updateClock();
   setInterval(updateClock, 1000);
   renderTicker();
@@ -54,17 +155,69 @@ function fmtPct(v) {
 function getLifeLatest() { return DATA.life.monthly_data[DATA.life.monthly_data.length - 1]; }
 function getNonLifeLatest() { return DATA.non_life.monthly_data[DATA.non_life.monthly_data.length - 1]; }
 
+// ─── Export ─────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!table) return;
+  var rows = table.getData();
+  if (!rows.length) return;
+  var cols = Object.keys(rows[0]).filter(function(k) { return k !== '_seg' && k !== 'seg'; });
+  var csv = cols.map(function(c) { return c.toUpperCase(); }).join(',') + '\n';
+  rows.forEach(function(r) {
+    csv += cols.map(function(c) {
+      var v = r[c];
+      if (typeof v === 'string') return '"' + v.replace(/"/g, '""') + '"';
+      return v === undefined || v === null ? '' : v;
+    }).join(',') + '\n';
+  });
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'irdai-' + currentView + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  document.getElementById('cmdStatus').textContent = 'Exported ' + rows.length + ' rows';
+  setTimeout(function() { document.getElementById('cmdStatus').textContent = '60 insurers tracked'; }, 3000);
+}
+
 // ─── Ticker ─────────────────────────────────────────────────────────
 function renderTicker() {
-  const latest = getNonLifeLatest();
-  const items = latest.insurers.map(function(i) {
-    var cls = i.yoy_growth_pct >= 0 ? 'up' : 'dn';
-    return '<span class="ticker-item">' +
-      '<span class="t-sym">' + i.name.split(' ')[0] + '</span>' +
-      '<span class="t-px">' + fmtCr(i.premium_cr) + '</span>' +
-      '<span class="t-chg ' + cls + '">' + fmtPct(i.yoy_growth_pct) + '</span>' +
-    '</span>';
-  }).join('');
+  var life = getLifeLatest();
+  var nonlife = getNonLifeLatest();
+
+  // Interleave life + non-life insurers
+  var maxLen = Math.max(life.insurers.length, nonlife.insurers.length);
+  var items = '';
+  for (var i = 0; i < maxLen; i++) {
+    if (i < life.insurers.length) {
+      var li = life.insurers[i];
+      items += '<span class="ticker-item">' +
+        '<span class="t-sym" style="color:var(--green)">' + li.name.split(' ')[0] + '</span>' +
+        '<span class="t-px">' + fmtCr(li.premium_cr) + '</span>' +
+        '<span class="t-chg ' + (li.yoy_growth_pct >= 0 ? 'up' : 'dn') + '">' + fmtPct(li.yoy_growth_pct) + '</span>' +
+      '</span>';
+    }
+    if (i < nonlife.insurers.length) {
+      var ni = nonlife.insurers[i];
+      items += '<span class="ticker-item">' +
+        '<span class="t-sym" style="color:var(--cyan)">' + ni.name.split(' ')[0] + '</span>' +
+        '<span class="t-px">' + fmtCr(ni.premium_cr) + '</span>' +
+        '<span class="t-chg ' + (ni.yoy_growth_pct >= 0 ? 'up' : 'dn') + '">' + fmtPct(ni.yoy_growth_pct) + '</span>' +
+      '</span>';
+    }
+  }
+
+  // Append stock tickers for listed insurers
+  if (STOCKS) {
+    var stockItems = Object.keys(STOCKS.prices).map(function(t) {
+      var p = STOCKS.prices[t];
+      return '<span class="ticker-item" style="border-right-color:var(--amber-dim)">' +
+        '<span class="t-sym" style="color:var(--amber)">' + t.replace('.NS', '') + '</span>' +
+        '<span class="t-px">\u20B9' + p.price.toFixed(1) + '</span>' +
+      '</span>';
+    }).join('');
+    items += stockItems;
+  }
+
   document.getElementById('ticker').innerHTML = items + items;
 }
 
@@ -99,8 +252,14 @@ function setupNav() {
       parent.querySelectorAll('.panel-tab').forEach(function(n) { n.classList.remove('active'); });
       el.classList.add('active');
       parent.querySelectorAll('.tab-content').forEach(function(n) { n.classList.remove('active'); });
-      var target = document.getElementById(el.dataset.tab + '-tab') || document.getElementById(el.dataset.panel + '-tab');
-      if (target) target.classList.add('active');
+      var tabKey = el.dataset.tab || el.dataset.panel;
+      var target = document.getElementById(tabKey + '-tab');
+      if (target) {
+        target.classList.add('active');
+        // Lazy-render HHI and Movers tabs
+        if (tabKey === 'hhi' && typeof renderHHI === 'function') renderHHI();
+        if (tabKey === 'movers' && typeof renderMovers === 'function') renderMovers();
+      }
     });
   });
   document.querySelectorAll('[data-tf]').forEach(function(el) {
@@ -111,6 +270,18 @@ function setupNav() {
       updateChart();
     });
   });
+
+  // EMA indicator toggle
+  var emaBtn = document.querySelector('[data-indicator="ema"]');
+  if (emaBtn) {
+    emaBtn.addEventListener('click', function() {
+      showEMA = !showEMA;
+      emaBtn.style.color = showEMA ? 'var(--bg)' : 'var(--amber)';
+      emaBtn.style.background = showEMA ? 'var(--amber)' : 'transparent';
+      emaBtn.style.borderColor = showEMA ? 'var(--amber)' : 'var(--amber-dim)';
+      toggleEMA();
+    });
+  }
 }
 
 function setupKeys() {
@@ -143,6 +314,7 @@ function setupCmd() {
       else if (cmd === 'life' || cmd === '2') switchView('life');
       else if (cmd === 'nonlife' || cmd === '3') switchView('nonlife');
       else if (cmd === 'compare' || cmd === '4') switchView('compare');
+      else if (cmd === 'export') { exportCSV(); }
       else if (cmd.indexOf('search ') === 0) {
         var q = cmd.slice(7);
         if (table) table.setFilter('name', 'like', q);
@@ -162,6 +334,7 @@ function showHelp() {
       '<span style="color:var(--cyan)">3 / nonlife</span><span>Non-life insurance view</span>' +
       '<span style="color:var(--cyan)">4 / compare</span><span>Life vs Non-Life comparison</span>' +
       '<span style="color:var(--cyan)">search &lt;name&gt;</span><span>Filter table by company name</span>' +
+      '<span style="color:var(--cyan)">export</span><span>Download table as CSV</span>' +
       '<span style="color:var(--cyan)">Ctrl+R</span><span>Refresh data</span>' +
       '<span style="color:var(--cyan)">Esc</span><span>Close popup</span>' +
     '</div>' +
@@ -190,7 +363,29 @@ function closePopup() {
 function renderView(view) {
   currentView = view;
   if (table) { table.destroy(); table = null; }
-  if (chart) { chart.remove(); chart = null; chartSeries = null; }
+
+  // Remove EMA series before destroying chart
+  if (emaSeries && chart) { chart.removeSeries(emaSeries); emaSeries = null; }
+  showEMA = false;
+
+  if (chart) { chart.remove(); chart = null; chartSeries = []; }
+
+  // Sync chartType with view
+  var viewMap = { overview:'all', life:'life', nonlife:'nonlife', compare:'compare' };
+  chartType = viewMap[view] || 'all';
+
+  // Sync active filter button
+  document.querySelectorAll('[data-tf]').forEach(function(n) {
+    n.classList.toggle('active', n.dataset.tf === chartType);
+  });
+  var emaBtn = document.querySelector('[data-indicator="ema"]');
+  if (emaBtn) {
+    emaBtn.style.color = 'var(--amber)';
+    emaBtn.style.background = 'transparent';
+    emaBtn.style.borderColor = 'var(--amber-dim)';
+  }
+
+  // Lazy-rendered tabs tracked per view; no reset needed
 
   if (view === 'overview') renderOverview();
   else if (view === 'life') renderSegment('life');
@@ -326,21 +521,57 @@ function buildTable(data, columns, colDefs) {
 
   table.on('rowClick', function(e, row) {
     var d = row.getData();
-    showPopup(d.name,
+    var profile = lookupCompany(d.name);
+    var html =
       '<div style="display:grid;grid-template-columns:100px 1fr;gap:4px 12px;font-size:10px;">' +
         '<span style="color:var(--gray)">Premium</span><span style="color:var(--white)">' + fmtCr(d.premium_cr) + '</span>' +
         '<span style="color:var(--gray)">Market Share</span><span style="color:var(--amber)">' + d.market_share_pct.toFixed(1) + '%</span>' +
         '<span style="color:var(--gray)">YoY Growth</span><span style="color:' + (d.yoy_growth_pct >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmtPct(d.yoy_growth_pct) + '</span>' +
         '<span style="color:var(--gray)">Rank</span><span>#' + d.rank + '</span>' +
         (d._seg ? '<span style="color:var(--gray)">Segment</span><span>' + d._seg + '</span>' : '') +
-      '</div>'
-    );
+      '</div>';
+    if (profile) {
+      var logoUrl = getCompanyLogo(d.name);
+      html +=
+        '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-size:9px;">' +
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
+            (logoUrl ? '<img src="' + logoUrl + '" onerror="this.style.display=\'none\'" style="width:20px;height:20px;border:1px solid var(--border2);border-radius:2px;flex-shrink:0;">' : '') +
+            '<div style="color:var(--gray);font-size:8px;letter-spacing:1px;text-transform:uppercase;">COMPANY PROFILE</div>' +
+          '</div>' +
+          '<div style="display:grid;grid-template-columns:80px 1fr;gap:3px 8px;">' +
+            (profile.group ? '<span style="color:var(--gray2)">Group</span><span>' + profile.group + '</span>' : '') +
+            (profile.founded ? '<span style="color:var(--gray2)">Founded</span><span>' + profile.founded + '</span>' : '') +
+            (profile.ticker ? '<span style="color:var(--gray2)">Ticker</span><span style="color:var(--cyan)">' + profile.ticker + '</span>' : '') +
+            (profile.rating ? '<span style="color:var(--gray2)">Rating</span><span style="color:var(--amber)">' + profile.rating + '</span>' : '') +
+            (profile.specialties ? '<span style="color:var(--gray2)">Specialties</span><span>' + profile.specialties + '</span>' : '') +
+          '</div>' +
+          (function() {
+            var sp = profile.ticker ? getStockPrice(profile.ticker) : null;
+            return sp && sp.price ? (
+              '<div style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border);font-size:9px;">' +
+                '<div style="display:grid;grid-template-columns:80px 1fr;gap:3px 8px;">' +
+                  '<span style="color:var(--gray2)">NSE Price</span><span style="color:var(--amber)">\u20B9' + sp.price.toFixed(2) + '</span>' +
+                  '<span style="color:var(--gray2)">Exchange</span><span>' + sp.exchange + '</span>' +
+                '</div>' +
+              '</div>'
+            ) : '';
+          })() +
+          (profile.desc ? '<div style="margin-top:4px;color:var(--gray2);font-size:8px;line-height:1.5;">' + profile.desc + '</div>' : '') +
+        '</div>';
+    }
+    showPopup(d.name, html);
   });
 }
 
 // ─── Chart ──────────────────────────────────────────────────────────
 function updateChartData(segment) {
   var container = document.getElementById('trendChart');
+
+  // Remove old resize handler before adding new one
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler);
+  }
+
   if (!chart) {
     chart = LightweightCharts.createChart(container, {
       layout: {
@@ -366,8 +597,8 @@ function updateChartData(segment) {
         borderColor: '#282a3a',
         scaleMargins: { top: 0.1, bottom: 0.2 },
       },
-      handleScroll: false,
-      handleScale: false,
+      handleScroll: true,
+      handleScale: true,
     });
 
     chart.applyOptions({
@@ -384,40 +615,90 @@ function updateChartData(segment) {
   chart.resize(container.clientWidth || 300, container.clientHeight || 200);
   updateChart();
 
-  // Resize on window resize
-  var resizeFn = function() {
+  // Deduplicated resize handler
+  resizeHandler = function() {
     var r = container.getBoundingClientRect();
     if (r.width > 0 && r.height > 0) chart.resize(r.width, r.height);
   };
-  window.addEventListener('resize', resizeFn);
+  window.addEventListener('resize', resizeHandler);
+}
+
+// ─── EMA ────────────────────────────────────────────────────────────
+function calcEMA(data, period) {
+  if (!data || data.length < period) return null;
+  var k = 2 / (period + 1);
+  var result = [];
+  // First EMA = SMA for first `period` values
+  var sum = 0;
+  for (var i = 0; i < period; i++) sum += data[i].value;
+  var prevEMA = sum / period;
+  result.push({ time: data[period - 1].time, value: prevEMA });
+
+  for (var i = period; i < data.length; i++) {
+    var ema = data[i].value * k + prevEMA * (1 - k);
+    result.push({ time: data[i].time, value: ema });
+    prevEMA = ema;
+  }
+  return result;
+}
+
+function toggleEMA() {
+  if (!chart) return;
+  if (emaSeries) { chart.removeSeries(emaSeries); emaSeries = null; }
+  if (!showEMA) return;
+
+  // Rebuild data from current chartType
+  var data;
+  if (chartType === 'all' || chartType === 'overview') {
+    data = DATA.life.monthly_data.map(function(m, i) {
+      var non = DATA.non_life.monthly_data[i] || DATA.non_life.monthly_data[DATA.non_life.monthly_data.length - 1];
+      return { time: m.month, value: m.total_premium_cr + non.total_premium_cr };
+    });
+  } else if (chartType === 'life') {
+    data = DATA.life.monthly_data.map(function(m) { return { time: m.month, value: m.total_premium_cr }; });
+  } else if (chartType === 'nonlife') {
+    data = DATA.non_life.monthly_data.map(function(m) { return { time: m.month, value: m.total_premium_cr }; });
+  } else {
+    return; // Skip EMA for compare view
+  }
+
+  var emaData = calcEMA(data, 3);
+  if (!emaData) return;
+
+  emaSeries = chart.addLineSeries({
+    color: '#ff9900',
+    lineWidth: 1.5,
+    lastValueVisible: true,
+    priceFormat: { type: 'volume' },
+    lineStyle: 2,
+  });
+  emaSeries.setData(emaData);
 }
 
 function updateChart() {
   if (!chart) return;
-  if (chartSeries) { chart.removeSeries(chartSeries); chartSeries = null; }
+  // Remove all existing series
+  chartSeries.forEach(function(s) { chart.removeSeries(s); });
+  chartSeries = [];
 
-  var data, color, label;
+  var data, color;
   if (chartType === 'all' || chartType === 'overview') {
     data = DATA.life.monthly_data.map(function(m, i) {
       var non = DATA.non_life.monthly_data[i] || DATA.non_life.monthly_data[DATA.non_life.monthly_data.length - 1];
       return { time: m.month, value: m.total_premium_cr + non.total_premium_cr };
     });
     color = '#ff9900';
-    label = 'Total Premium';
   } else if (chartType === 'life') {
     data = DATA.life.monthly_data.map(function(m) { return { time: m.month, value: m.total_premium_cr }; });
     color = '#00cc44';
-    label = 'Life Premium';
   } else if (chartType === 'nonlife') {
     data = DATA.non_life.monthly_data.map(function(m) { return { time: m.month, value: m.total_premium_cr }; });
     color = '#00ccff';
-    label = 'Non-Life Premium';
   } else if (chartType === 'compare') {
-    color = '#ff9900';
-    label = 'Total Premium';
+    // Two series: Life and Non-Life
     var lifeData = DATA.life.monthly_data;
     var nonData = DATA.non_life.monthly_data;
-    // Show both as separate series
+
     var lifeSeries = chart.addAreaSeries({
       lineColor: '#00cc44',
       topColor: '#00cc4420',
@@ -427,21 +708,24 @@ function updateChart() {
       priceFormat: { type: 'volume' },
     });
     lifeSeries.setData(lifeData.map(function(m) { return { time: m.month, value: m.total_premium_cr }; }));
-    chartSeries = lifeSeries;
+    chartSeries.push(lifeSeries);
 
     var nonSeries = chart.addAreaSeries({
       lineColor: '#00ccff',
       topColor: '#00ccff20',
       bottomColor: '#00ccff05',
       lineWidth: 1,
+      lastValueVisible: true,
+      priceFormat: { type: 'volume' },
     });
     nonSeries.setData(nonData.map(function(m) { return { time: m.month, value: m.total_premium_cr }; }));
+    chartSeries.push(nonSeries);
 
     chart.timeScale().fitContent();
     return;
   }
 
-  chartSeries = chart.addAreaSeries({
+  var series = chart.addAreaSeries({
     lineColor: color,
     topColor: color + '20',
     bottomColor: color + '05',
@@ -449,7 +733,8 @@ function updateChart() {
     lastValueVisible: true,
     priceFormat: { type: 'volume' },
   });
-  chartSeries.setData(data);
+  series.setData(data);
+  chartSeries.push(series);
   chart.timeScale().fitContent();
 }
 
@@ -476,6 +761,120 @@ function updateMetaSegment(latest, segment) {
     '<span>YoY <span class="' + (latest.total_growth_pct >= 0 ? 'up' : 'dn') + '">' + fmtPct(latest.total_growth_pct) + '</span></span>' +
     '<span>Players <span>' + latest.insurers.length + '</span></span>' +
     '<span>Top Share <span>' + latest.insurers[0].market_share_pct.toFixed(1) + '%</span></span>';
+}
+
+// ─── HHI / Concentration Tab ────────────────────────────────────────
+function renderHHI() {
+  var tabKey = currentView + '-hhi';
+  if (renderedTabs[tabKey]) return;
+  renderedTabs[tabKey] = true;
+
+  var life = getLifeLatest();
+  var nonlife = getNonLifeLatest();
+
+  function calcHHI(insurers) {
+    var hhi = 0;
+    insurers.forEach(function(i) { hhi += i.market_share_pct * i.market_share_pct; });
+    return hhi;
+  }
+
+  function getConcentrationLevel(hhi) {
+    if (hhi < 1500) return { label: 'COMPETITIVE', color: 'var(--green)' };
+    if (hhi < 2500) return { label: 'MODERATELY CONCENTRATED', color: 'var(--amber)' };
+    return { label: 'HIGHLY CONCENTRATED', color: 'var(--red)' };
+  }
+
+  var lifeHHI = calcHHI(life.insurers);
+  var nonLifeHHI = calcHHI(nonlife.insurers);
+  var lifeLevel = getConcentrationLevel(lifeHHI);
+  var nonLifeLevel = getConcentrationLevel(nonLifeHHI);
+
+  function topContributors(insurers, n) {
+    return insurers.slice().sort(function(a, b) {
+      return b.market_share_pct - a.market_share_pct;
+    }).slice(0, n);
+  }
+
+  var html =
+    '<div class="insight-grid">' +
+      '<div class="insight-card">' +
+        '<div class="label">LIFE HHI</div>' +
+        '<div class="value" style="color:' + lifeLevel.color + '">' + lifeHHI.toFixed(1) + '</div>' +
+        '<div class="desc">' + lifeLevel.label + '</div>' +
+      '</div>' +
+      '<div class="insight-card">' +
+        '<div class="label">NON-LIFE HHI</div>' +
+        '<div class="value" style="color:' + nonLifeLevel.color + '">' + nonLifeHHI.toFixed(1) + '</div>' +
+        '<div class="desc">' + nonLifeLevel.label + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="margin-bottom:4px;font-size:7px;color:var(--gray2);letter-spacing:0.5px;">Herfindahl-Hirschman Index = sum of squared market shares. &lt;1500 = competitive, 1500-2500 = moderate, &gt;2500 = concentrated.</div>' +
+    '<div class="section-label">TOP CONTRIBUTORS TO LIFE CONCENTRATION</div>';
+
+  var lifeTop = topContributors(life.insurers, 5);
+  lifeTop.forEach(function(i, idx) {
+    html += '<div class="player-row">' +
+      '<span class="player-rank">#' + (idx + 1) + '</span>' +
+      '<span class="player-name">' + i.name.split(' ').slice(0, 2).join(' ') + '</span>' +
+      '<span class="player-share" style="color:var(--green)">' + i.market_share_pct.toFixed(1) + '%</span>' +
+      '<span style="font-size:8px;color:var(--gray)">' + (i.market_share_pct * i.market_share_pct).toFixed(1) + '</span>' +
+    '</div>';
+  });
+
+  html += '<div class="section-label" style="margin-top:4px;">TOP CONTRIBUTORS TO NON-LIFE CONCENTRATION</div>';
+  var nonLifeTop = topContributors(nonlife.insurers, 5);
+  nonLifeTop.forEach(function(i, idx) {
+    html += '<div class="player-row">' +
+      '<span class="player-rank">#' + (idx + 1) + '</span>' +
+      '<span class="player-name">' + i.name.split(' ').slice(0, 2).join(' ') + '</span>' +
+      '<span class="player-share" style="color:var(--cyan)">' + i.market_share_pct.toFixed(1) + '%</span>' +
+      '<span style="font-size:8px;color:var(--gray)">' + (i.market_share_pct * i.market_share_pct).toFixed(1) + '</span>' +
+    '</div>';
+  });
+
+  document.getElementById('hhiContainer').innerHTML = html;
+}
+
+// ─── Movers Tab ─────────────────────────────────────────────────────
+function renderMovers() {
+  var tabKey = currentView + '-movers';
+  if (renderedTabs[tabKey]) return;
+  renderedTabs[tabKey] = true;
+
+  var life = getLifeLatest();
+  var nonlife = getNonLifeLatest();
+
+  var all = life.insurers.map(function(i) { return Object.assign({}, i, { _seg: 'Life' }); })
+    .concat(nonlife.insurers.map(function(i) { return Object.assign({}, i, { _seg: 'Non-Life' }); }));
+
+  var sorted = all.slice().sort(function(a, b) { return b.yoy_growth_pct - a.yoy_growth_pct; });
+
+  var top5 = sorted.slice(0, 5);
+  var bottom5 = sorted.slice(-5).reverse();
+
+  var html = '<div class="section-label">TOP 5 — FASTEST GROWING</div>';
+  top5.forEach(function(i, idx) {
+    var segColor = i._seg === 'Life' ? 'var(--green)' : 'var(--cyan)';
+    html += '<div class="player-row">' +
+      '<span class="player-rank">#' + (idx + 1) + '</span>' +
+      '<span class="player-name">' + i.name + '</span>' +
+      '<span style="color:' + segColor + ';font-size:8px;width:50px">' + i._seg + '</span>' +
+      '<span class="player-growth up">' + fmtPct(i.yoy_growth_pct) + '</span>' +
+    '</div>';
+  });
+
+  html += '<div class="section-label" style="margin-top:6px;">BOTTOM 5 — FASTEST SHRINKING</div>';
+  bottom5.forEach(function(i, idx) {
+    var segColor = i._seg === 'Life' ? 'var(--green)' : 'var(--cyan)';
+    html += '<div class="player-row">' +
+      '<span class="player-rank">#' + (idx + 1) + '</span>' +
+      '<span class="player-name">' + i.name + '</span>' +
+      '<span style="color:' + segColor + ';font-size:8px;width:50px">' + i._seg + '</span>' +
+      '<span class="player-growth dn">' + fmtPct(i.yoy_growth_pct) + '</span>' +
+    '</div>';
+  });
+
+  document.getElementById('moversContainer').innerHTML = html;
 }
 
 // ─── Insights Tab ───────────────────────────────────────────────────

@@ -1,5 +1,65 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ─── LOADING SKELETON ────────────────────────────── */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+body.loading .kpi-strip .kpi-item {
+  background: var(--bg3);
+  position: relative;
+  overflow: hidden;
+}
+body.loading .kpi-strip .kpi-item::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,153,0,0.05), transparent);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+body.loading #tableContainer {
+  position: relative;
+  min-height: 200px;
+}
+body.loading #tableContainer::after {
+  content: 'LOADING DATA\u2026';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: var(--gray2); letter-spacing: 2px;
+  background: var(--bg);
+  z-index: 10;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+body.loading .chart-area {
+  position: relative;
+}
+body.loading .chart-area::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--bg2);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  z-index: 10;
+}
+
+body.loading .tab-content.active .panel-body {
+  position: relative;
+  min-height: 80px;
+}
+body.loading .tab-content.active .panel-body::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--bg2);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  z-index: 10;
+}
+
+body.loading #ticker {
+  opacity: 0.15;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
 :root {
   --bg:        #07080a;
   --bg2:       #0b0d12;

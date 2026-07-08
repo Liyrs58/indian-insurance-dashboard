@@ -82,6 +82,7 @@
           <button class="tf-btn" data-tf="nonlife">NON-LIFE</button>
           <div style="flex:1"></div>
           <button class="tf-btn" data-indicator="ema" style="color:var(--amber);border-color:var(--amber-dim)">EMA</button>
+          <button class="tf-btn" onclick="fitChart()" style="color:var(--cyan);border-color:rgba(0,204,255,0.3)">FIT</button>
         </div>
         <div class="chart-area" id="trendChart"></div>
       </div>
@@ -125,6 +126,7 @@
   </div>
 </div>
 
+<script>document.body.classList.add('loading');</script>
 <script src="js/dashboard.js"></script>
 </body>
 </html>
