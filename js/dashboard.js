@@ -11,6 +11,24 @@ let renderedTabs = {};
 let showEMA = false;
 let emaSeries = null;
 let chartPeriod = 'all';
+let selectedMonth = null;
+
+function getAvailableMonths() {
+  if (!DATA) return [];
+  var months = {};
+  DATA.life.monthly_data.concat(DATA.non_life.monthly_data).forEach(function(m) { months[m.month] = true; });
+  return Object.keys(months).sort();
+}
+
+function getMonthData(segment, month) {
+  if (!DATA || !DATA[segment]) return null;
+  var m = month || selectedMonth;
+  if (!m) return DATA[segment].monthly_data[DATA[segment].monthly_data.length - 1];
+  for (var i = 0; i < DATA[segment].monthly_data.length; i++) {
+    if (DATA[segment].monthly_data[i].month === m) return DATA[segment].monthly_data[i];
+  }
+  return DATA[segment].monthly_data[DATA[segment].monthly_data.length - 1];
+}
 
 // ─── Company Enrichment DB ──────────────────────────────────────────
 const COMPANY_DB = {
@@ -100,8 +118,49 @@ function getStockPrice(ticker) {
   return STOCKS.prices[ticker];
 }
 
+function renderMonthSelector() {
+  var sel = document.getElementById('monthSelect');
+  if (!sel || !DATA) return;
+  var months = getAvailableMonths();
+  sel.innerHTML = months.map(function(m) {
+    var label = m;
+    var isLatest = (m === months[months.length - 1]);
+    return '<option value="' + m + '"' + (isLatest ? ' selected' : '') + '>' + label + (isLatest ? ' (Latest)' : '') + '</option>';
+  }).join('');
+}
+
+function changeMonth(month) {
+  selectedMonth = month || null;
+  renderView(currentView);
+}
+
 function fitChart() {
   if (chart) chart.timeScale().fitContent();
+}
+
+function showSplash() {
+  var s = DATA ? DATA.summary : {};
+  var life = getLifeLatest();
+  var nonlife = getNonLifeLatest();
+  var total = (s.total_market_premium_cr || 0).toFixed(0);
+  showPopup('IRDAI INDIAN INSURANCE MARKET ' + (getAvailableMonths().slice(-1)[0] || ''),
+    '<div style="font-size:10px;line-height:1.6;">' +
+      '<div style="color:var(--amber);font-size:14px;font-weight:700;letter-spacing:2px;margin-bottom:6px;">INDIAN INSURANCE TERMINAL</div>' +
+      '<div style="color:var(--gray);font-size:8px;margin-bottom:8px;">IRDAI Flash Figures · Integrated NSE Data · Bloomberg-style Terminal</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:9px;margin-bottom:6px;">' +
+        '<span style="color:var(--gray2)">Total Market</span><span style="color:var(--amber)">\u20B9' + (total/1000).toFixed(1) + 'K Cr</span>' +
+        '<span style="color:var(--gray2)">Life Premium</span><span style="color:var(--green)">\u20B9' + (life ? life.total_premium_cr.toFixed(0) : '--') + ' Cr</span>' +
+        '<span style="color:var(--gray2)">Non-Life Premium</span><span style="color:var(--cyan)">\u20B9' + (nonlife ? nonlife.total_premium_cr.toFixed(0) : '--') + ' Cr</span>' +
+        '<span style="color:var(--gray2)">Penetration</span><span style="color:var(--purple)">' + s.insurance_penetration_pct + '% (Global: ' + s.global_penetration_avg_pct + '%)</span>' +
+        '<span style="color:var(--gray2)">Density</span><span style="color:var(--orange)">$' + s.insurance_density_usd + '/capita</span>' +
+        '<span style="color:var(--gray2)">Life Insurers</span><span style="color:var(--green)">' + (life ? life.insurers.length : 0) + '</span>' +
+        '<span style="color:var(--gray2)">Non-Life Insurers</span><span style="color:var(--cyan)">' + (nonlife ? nonlife.insurers.length : 0) + '</span>' +
+        '<span style="color:var(--gray2)">NSE Stocks</span><span style="color:var(--amber)">' + (STOCKS ? Object.keys(STOCKS.prices).length : 0) + '</span>' +
+        '<span style="color:var(--gray2)">Data Months</span><span>' + getAvailableMonths().length + '</span>' +
+      '</div>' +
+      '<div style="color:var(--gray2);font-size:7px;border-top:1px solid var(--border);padding-top:4px;">Press ? for commands · 1-4 for views · I for this screen · Double-click chart for fullscreen</div>' +
+    '</div>'
+  );
 }
 
 var fullscreenChart = false;
@@ -115,15 +174,53 @@ function toggleFullscreenChart() {
   }, 50);
 }
 
+// ─── Cache ──────────────────────────────────────────────────────────
+function cacheSave(key, data) {
+  try { localStorage.setItem('irdai_' + key, JSON.stringify({ t: Date.now(), d: data })); } catch(e) {}
+}
+function cacheLoad(key, maxAgeMs) {
+  try {
+    var raw = localStorage.getItem('irdai_' + key);
+    if (!raw) return null;
+    var parsed = JSON.parse(raw);
+    if (Date.now() - parsed.t > maxAgeMs) return null;
+    return parsed.d;
+  } catch(e) { return null; }
+}
+
 // ─── Load ───────────────────────────────────────────────────────────
+var cachedData = cacheLoad('data', 3600000); // 1 hour cache
+var cachedStocks = cacheLoad('stocks', 600000); // 10 min cache
+var cachedBrief = cacheLoad('brief', 3600000);
+
+if (cachedData) {
+  DATA = cachedData;
+  STOCKS = cachedStocks;
+  if (cachedBrief) window._briefMd = cachedBrief;
+  init();
+  // Still fetch fresh data in background
+}
+
 Promise.all([
   fetch('data/irdai-processed.json').then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }),
   fetch('data/stock-prices.json').then(function(r) { if (!r.ok) return null; return r.json(); }).catch(function() { return null; }),
+  fetch('data/analysis_summary.md').then(function(r) { if (!r.ok) return null; return r.text(); }).catch(function() { return null; }),
 ])
   .then(function(results) {
     DATA = results[0];
     STOCKS = results[1];
-    init();
+    cacheSave('data', DATA);
+    cacheSave('stocks', STOCKS);
+    if (results[2]) { window._briefMd = results[2]; cacheSave('brief', results[2]); }
+    if (!cachedData) init();
+    else {
+      // Re-render with fresh data
+      document.body.classList.remove('loading');
+      renderMonthSelector();
+      renderTicker();
+      renderKPI();
+      renderView(currentView);
+    }
   })
   .catch(function() {
     document.getElementById('dataStatus').textContent = 'ERR';
@@ -136,6 +233,7 @@ function init() {
   document.body.classList.remove('loading');
   updateClock();
   setInterval(updateClock, 1000);
+  renderMonthSelector();
   renderTicker();
   renderKPI();
   renderView('overview');
@@ -164,8 +262,10 @@ function fmtPct(v) {
   if (v === undefined || v === null) return '--';
   return (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
 }
-function getLifeLatest() { return DATA.life.monthly_data[DATA.life.monthly_data.length - 1]; }
-function getNonLifeLatest() { return DATA.non_life.monthly_data[DATA.non_life.monthly_data.length - 1]; }
+function getLifeLatest() { return getMonthData('life', null); }
+function getNonLifeLatest() { return getMonthData('non_life', null); }
+function getLifeData(month) { return getMonthData('life', month); }
+function getNonLifeData(month) { return getMonthData('non_life', month); }
 
 // ─── Export ─────────────────────────────────────────────────────────
 function exportCSV() {
@@ -268,9 +368,10 @@ function setupNav() {
       var target = document.getElementById(tabKey + '-tab');
       if (target) {
         target.classList.add('active');
-        // Lazy-render HHI and Movers tabs
+        // Lazy-render specialty tabs
         if (tabKey === 'hhi' && typeof renderHHI === 'function') renderHHI();
         if (tabKey === 'movers' && typeof renderMovers === 'function') renderMovers();
+        if (tabKey === 'brief' && typeof renderBrief === 'function') renderBrief();
       }
     });
   });
@@ -316,6 +417,7 @@ function setupKeys() {
     if (e.key === '?' || e.key === '/') { e.preventDefault(); showHelp(); }
     if (e.key === 'f' || e.key === 'F') { e.preventDefault(); fitChart(); }
     if (e.key === 'e' || e.key === 'E') { e.preventDefault(); toggleEMAByKey(); }
+    if (e.key === 'i' || e.key === 'I') { e.preventDefault(); showSplash(); }
     if (e.key === 'r' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); refreshData(); }
   });
 }
@@ -340,6 +442,7 @@ function setupCmd() {
       else if (cmd === 'nonlife' || cmd === '3') switchView('nonlife');
       else if (cmd === 'compare' || cmd === '4') switchView('compare');
       else if (cmd === 'export') { exportCSV(); }
+      else if (cmd === 'splash' || cmd === 'i') { showSplash(); }
       else if (cmd.indexOf('search ') === 0) {
         var q = cmd.slice(7);
         if (table) table.setFilter('name', 'like', q);
@@ -362,6 +465,7 @@ function showHelp() {
       '<span style="color:var(--cyan)">export</span><span>Download table as CSV</span>' +
       '<span style="color:var(--cyan)">F / fit</span><span>Reset chart zoom</span>' +
       '<span style="color:var(--cyan)">E / ema</span><span>Toggle EMA overlay</span>' +
+      '<span style="color:var(--cyan)">I / splash</span><span>IRDAI market overview splash</span>' +
       '<span style="color:var(--cyan)">? / help</span><span>Show this help</span>' +
       '<span style="color:var(--cyan)">Ctrl+R</span><span>Refresh data</span>' +
       '<span style="color:var(--cyan)">Esc</span><span>Close popup</span>' +
@@ -425,15 +529,17 @@ function renderView(view) {
 function renderOverview() {
   var life = getLifeLatest();
   var nonlife = getNonLifeLatest();
-  var combined = life.insurers.map(function(i) { return Object.assign({}, i, { _seg: 'Life' }); })
-    .concat(nonlife.insurers.map(function(i) { return Object.assign({}, i, { _seg: 'Non-Life' }); }))
+  var enrichedLife = enrichInsurers(life.insurers, 'life', life.month);
+  var enrichedNonLife = enrichInsurers(nonlife.insurers, 'non_life', nonlife.month);
+  var combined = enrichedLife.map(function(i) { return Object.assign({}, i, { _seg: 'Life' }); })
+    .concat(enrichedNonLife.map(function(i) { return Object.assign({}, i, { _seg: 'Non-Life' }); }))
     .sort(function(a, b) { return b.premium_cr - a.premium_cr; });
 
   document.getElementById('tableTitle').textContent = 'ALL INSURERS';
   document.getElementById('tableMonth').textContent = nonlife.month;
 
-  buildTable(combined, ['rank', 'name', 'segment', 'premium', 'share', 'growth'],
-    { rank: { title: '#', width: 30 }, name: { title: 'Company', width: 200 }, segment: { title: 'Type', width: 60 }, premium: { title: 'Premium' }, share: { title: 'Share %' }, growth: { title: 'YoY %' } }
+  buildTable(combined, ['rank', 'name', 'segment', 'premium', 'share', 'growth', 'share_chg_pp', 'cagr_3m'],
+    { rank: { title: '#', width: 30 }, name: { title: 'Company', width: 200 }, segment: { title: 'Type', width: 60 }, premium: { title: 'Premium' }, share: { title: 'Shr%' }, growth: { title: 'YoY%' }, share_chg_pp: { title: 'ShrChg' }, cagr_3m: { title: '3M CAGR' } }
   );
 
   updateChartData('all');
@@ -453,8 +559,9 @@ function renderSegment(segment) {
   document.getElementById('tableTitle').textContent = label;
   document.getElementById('tableMonth').textContent = latest.month;
 
-  buildTable(latest.insurers, ['rank', 'name', 'premium', 'share', 'growth'],
-    { rank: { title: '#', width: 30 }, name: { title: 'Company', width: 220 }, premium: { title: 'Premium' }, share: { title: 'Share %' }, growth: { title: 'YoY %' } }
+  var enriched = enrichInsurers(latest.insurers, segment, latest.month);
+  buildTable(enriched, ['rank', 'name', 'premium', 'share', 'growth', 'share_chg_pp', 'cagr_3m'],
+    { rank: { title: '#', width: 30 }, name: { title: 'Company', width: 220 }, premium: { title: 'Premium' }, share: { title: 'Shr%' }, growth: { title: 'YoY%' }, share_chg_pp: { title: 'ShrChg' }, cagr_3m: { title: '3M CAGR' } }
   );
 
   updateChartData(segment);
@@ -485,6 +592,55 @@ function renderCompare() {
   renderCompareInsights(life, nonlife);
 }
 
+// ─── Enhanced Insurer Data ─────────────────────────────────────────
+function enrichInsurers(insurers, segment, month) {
+  if (!insurers || !insurers.length) return insurers;
+  var segKey = segment === 'life' ? 'life' : 'non_life';
+  var allData = DATA[segKey] ? DATA[segKey].monthly_data : [];
+  var currentIdx = -1;
+  for (var i = 0; i < allData.length; i++) {
+    if (allData[i].month === month) { currentIdx = i; break; }
+  }
+
+  var prevData = (currentIdx > 0) ? allData[currentIdx - 1] : null;
+
+  // Build prev month lookup by name
+  var prevByName = {};
+  if (prevData) {
+    prevData.insurers.forEach(function(ins) { prevByName[ins.name] = ins; });
+  }
+
+  return insurers.map(function(ins) {
+    var r = Object.assign({}, ins);
+    // Market share change vs prev month
+    if (prevByName[ins.name]) {
+      r.share_chg_pp = parseFloat((ins.market_share_pct - prevByName[ins.name].market_share_pct).toFixed(2));
+    } else {
+      r.share_chg_pp = null;
+    }
+
+    // 3-month CAGR if enough data
+    if (currentIdx >= 2 && allData[currentIdx - 2]) {
+      var older = allData[currentIdx - 2];
+      var olderIns = null;
+      for (var j = 0; j < older.insurers.length; j++) {
+        if (older.insurers[j].name === ins.name) { olderIns = older.insurers[j]; break; }
+      }
+      if (olderIns && olderIns.premium_cr > 0 && ins.premium_cr > 0) {
+        var periods = 3; // 3 months
+        var ratio = ins.premium_cr / olderIns.premium_cr;
+        r.cagr_3m = parseFloat(((Math.pow(ratio, 1/periods) - 1) * 100).toFixed(1));
+      } else {
+        r.cagr_3m = null;
+      }
+    } else {
+      r.cagr_3m = null;
+    }
+
+    return r;
+  });
+}
+
 // ─── Build Table (Tabulator) ────────────────────────────────────────
 function buildTable(data, columns, colDefs) {
   var colArr = columns.map(function(key) {
@@ -511,6 +667,20 @@ function buildTable(data, columns, colDefs) {
         var cls = v >= 0 ? 'var(--green)' : 'var(--red)';
         return '<span style="color:' + cls + ';font-variant-numeric:tabular-nums">' + fmtPct(v) + '</span>';
       };
+    } else if (key === 'share_chg_pp') {
+      formatter = function(c) {
+        var v = c.getValue();
+        if (v === null || v === undefined) return '<span style="color:var(--gray2)">--</span>';
+        var cls = v >= 0 ? 'var(--green)' : 'var(--red)';
+        return '<span style="color:' + cls + ';font-variant-numeric:tabular-nums">' + (v >= 0 ? '+' : '') + v.toFixed(2) + 'pp</span>';
+      };
+    } else if (key === 'cagr_3m') {
+      formatter = function(c) {
+        var v = c.getValue();
+        if (v === null || v === undefined) return '<span style="color:var(--gray2)">--</span>';
+        var cls = v >= 0 ? 'var(--green)' : 'var(--red)';
+        return '<span style="color:' + cls + ';font-variant-numeric:tabular-nums">' + (v >= 0 ? '+' : '') + v.toFixed(1) + '%</span>';
+      };
     }
 
     return {
@@ -521,7 +691,7 @@ function buildTable(data, columns, colDefs) {
       headerFilter: key === 'name' ? 'input' : false,
       headerFilterPlaceholder: key === 'name' ? 'Search...' : '',
       formatter: formatter,
-      sorter: (key === 'name' ? 'string' : (key === 'rank' || key === 'premium' || key === 'share' || key === 'growth') ? 'number' : 'string'),
+      sorter: (key === 'name' ? 'string' : (key === 'rank' || key === 'premium' || key === 'share' || key === 'growth' || key === 'share_chg_pp' || key === 'cagr_3m') ? 'number' : 'string'),
     };
   });
 
@@ -554,6 +724,8 @@ function buildTable(data, columns, colDefs) {
       '<div style="display:grid;grid-template-columns:100px 1fr;gap:4px 12px;font-size:10px;">' +
         '<span style="color:var(--gray)">Premium</span><span style="color:var(--white)">' + fmtCr(d.premium_cr) + '</span>' +
         '<span style="color:var(--gray)">Market Share</span><span style="color:var(--amber)">' + d.market_share_pct.toFixed(1) + '%</span>' +
+        '<span style="color:var(--gray)">Share Chg</span><span style="color:' + (d.share_chg_pp >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (d.share_chg_pp !== null && d.share_chg_pp !== undefined ? (d.share_chg_pp >= 0 ? '+' : '') + d.share_chg_pp.toFixed(2) + 'pp' : '<span style="color:var(--gray2)">--</span>') + '</span>' +
+        '<span style="color:var(--gray)">3M CAGR</span><span style="color:' + (d.cagr_3m >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (d.cagr_3m !== null && d.cagr_3m !== undefined ? (d.cagr_3m >= 0 ? '+' : '') + d.cagr_3m.toFixed(1) + '%' : '<span style="color:var(--gray2)">--</span>') + '</span>' +
         '<span style="color:var(--gray)">YoY Growth</span><span style="color:' + (d.yoy_growth_pct >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmtPct(d.yoy_growth_pct) + '</span>' +
         '<span style="color:var(--gray)">Rank</span><span>#' + d.rank + '</span>' +
         (d._seg ? '<span style="color:var(--gray)">Segment</span><span>' + d._seg + '</span>' : '') +
@@ -834,6 +1006,29 @@ function updateMetaSegment(latest, segment) {
     '<span>YoY <span class="' + (latest.total_growth_pct >= 0 ? 'up' : 'dn') + '">' + fmtPct(latest.total_growth_pct) + '</span></span>' +
     '<span>Players <span>' + latest.insurers.length + '</span></span>' +
     '<span>Top Share <span>' + latest.insurers[0].market_share_pct.toFixed(1) + '%</span></span>';
+}
+
+// ─── Brief Tab ──────────────────────────────────────────────────────
+var BRIEF_RENDERED = false;
+function renderBrief() {
+  if (BRIEF_RENDERED) return;
+  BRIEF_RENDERED = true;
+  var el = document.getElementById('brief-tab');
+  if (!el) return;
+  if (window._briefMd) {
+    // Simple markdown-to-HTML conversion for the brief
+    var html = window._briefMd
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/^### (.+)$/gm, '<div style="color:var(--amber);font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin:6px 0 2px;">$1</div>')
+      .replace(/^## (.+)$/gm, '<div style="color:var(--amber2);font-size:10px;font-weight:700;letter-spacing:1px;margin:8px 0 3px;border-bottom:1px solid var(--border);padding-bottom:2px;">$1</div>')
+      .replace(/^# (.+)$/gm, '<div style="color:var(--amber);font-size:12px;font-weight:700;letter-spacing:2px;margin:8px 0 4px;">$1</div>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--white)">$1</strong>')
+      .replace(/\n\n/g, '</p><p style="margin:4px 0;color:var(--gray2);font-size:9px;">')
+      .replace(/\n/g, '<br>');
+    el.innerHTML = '<p style="margin:0;color:var(--gray2);font-size:9px;">' + html + '</p>';
+  } else {
+    el.innerHTML = '<div style="color:var(--gray2);font-size:9px;padding:12px;text-align:center;">No analysis brief available. Run the multi-agent system to generate one.</div>';
+  }
 }
 
 // ─── HHI / Concentration Tab ────────────────────────────────────────

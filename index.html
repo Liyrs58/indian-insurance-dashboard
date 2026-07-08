@@ -45,6 +45,7 @@
     <div class="panel panel-left">
       <div class="panel-header">
         <div class="panel-title" id="tableTitle">ALL INSURERS</div>
+        <select class="month-select" id="monthSelect" onchange="changeMonth(this.value)"></select>
         <div class="panel-cmd" id="tableMonth">--</div>
       </div>
       <div class="panel-tabs">
@@ -103,10 +104,12 @@
         <div class="panel-tab active" data-panel="insights">INSIGHTS</div>
         <div class="panel-tab" data-panel="players">TOP PLAYERS</div>
         <div class="panel-tab" data-panel="penetration">PENETRATION</div>
+        <div class="panel-tab" data-panel="brief">BRIEF</div>
       </div>
       <div class="panel-body tab-content active" id="insights-tab" style="padding:8px;"></div>
       <div class="panel-body tab-content" id="players-tab" style="padding:8px;"></div>
       <div class="panel-body tab-content" id="penetration-tab" style="padding:8px;"></div>
+      <div class="panel-body tab-content" id="brief-tab" style="padding:8px;overflow-y:auto;font-size:9px;line-height:1.6;color:var(--white);"></div>
     </div>
 
   </div>
