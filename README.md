@@ -50,9 +50,17 @@ without editing code.
 The assistant also supports command-line mnemonics for faster terminal-style
 navigation. Press `Ctrl+K` to focus the command line and show available commands,
 then use entries such as `TOPLIFE`, `TOPNL`, `TOPALL`, `MKT`, `FIND LIC`,
-`WLIST`, `ALERTS`, `AUDIT`, and `EXPORTAUDIT`. Recent commands are stored in
+`WLIST`, `ALERTS`, `AUDIT`, `LINK`, `EXPORTCSV`, and `EXPORTAUDIT`. Recent commands are stored in
 `localStorage` under `irdai_command_history` and can be recalled with
 `ArrowUp` / `ArrowDown`.
+
+Use `LINK` to generate a shareable workspace URL hash, including the active
+view, selected month, and chart period, such as
+`#view=nonlife&month=2026-06&period=3m`.
+
+The primary terminal view keys are live: `F1` opens overview, `F2` opens life,
+`F3` opens non-life, and `F4` opens segment comparison. Number keys `1`-`4`
+remain available as fallback shortcuts.
 
 Saved view presets are stored locally in `localStorage` under
 `irdai_saved_views`. Use commands such as `save view nonlife desk`, `load view

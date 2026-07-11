@@ -113,6 +113,27 @@ try {
   assert.equal(desktop.tableBackground, 'rgba(0, 0, 0, 0)');
   assert.ok(desktop.scrollWidth <= desktop.innerWidth + 2, `desktop horizontal overflow: ${desktop.scrollWidth} > ${desktop.innerWidth}`);
 
+  await page.goto(`${server.baseUrl}/#view=nonlife&month=2026-06&period=3m`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.tabulator-row', { timeout: 20000 });
+  await page.waitForFunction(() => document.querySelector('#tableTitle')?.textContent === 'NON-LIFE INSURANCE', null, { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelector('#tableMonth')?.textContent === '2026-06', null, { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelector('.period-btn[data-period="3m"]')?.style.borderColor === 'var(--amber)' || document.querySelector('.period-btn[data-period="3m"]')?.style.borderColor === 'rgb(255, 153, 0)', null, { timeout: 5000 });
+  await page.locator('#chatInput').fill('LINK');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('#chatMessages')?.innerText.includes('Shareable workspace link'), null, { timeout: 5000 });
+  await page.waitForFunction(() => location.hash.includes('view=nonlife') && location.hash.includes('month=2026-06') && location.hash.includes('period=3m'), null, { timeout: 5000 });
+  const csvDownloadPromise = page.waitForEvent('download');
+  await page.locator('#chatInput').fill('EXPORTCSV');
+  await page.keyboard.press('Enter');
+  const csvDownload = await csvDownloadPromise;
+  assert.match(csvDownload.suggestedFilename(), /^irdai-.*\.csv$/);
+  const csvText = await readFile(await csvDownload.path(), 'utf8');
+  assert.match(csvText, /NAME,PREMIUM_CR,.*MARKET_SHARE_PCT/);
+  assert.match(csvText, /Life Insurance Corporation of India|New India Assurance/);
+  await page.goto(server.baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('.tabulator-row', { timeout: 20000 });
+  await page.waitForFunction(() => document.querySelector('#tableTitle')?.textContent === 'ALL INSURERS', null, { timeout: 5000 });
+
   const insightsText = await page.locator('#insights-tab').innerText();
   assert.match(insightsText, /WATCHLIST MONITOR/);
   assert.match(insightsText, /Life Insurance Corporation|LIC/);
@@ -174,6 +195,12 @@ try {
   await page.waitForFunction(() => document.querySelector('#chatInput')?.value === 'TOPLIFE', null, { timeout: 5000 });
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
   await page.waitForFunction(() => document.querySelector('#chatMessages')?.innerText.includes('COMMANDS'), null, { timeout: 5000 });
+  await page.keyboard.press('F2');
+  await page.waitForFunction(() => document.querySelector('#tableTitle')?.textContent === 'LIFE INSURANCE', null, { timeout: 5000 });
+  await page.keyboard.press('F4');
+  await page.waitForFunction(() => document.querySelector('#tableTitle')?.textContent === 'LIFE vs NON-LIFE', null, { timeout: 5000 });
+  await page.keyboard.press('F1');
+  await page.waitForFunction(() => document.querySelector('#tableTitle')?.textContent === 'ALL INSURERS', null, { timeout: 5000 });
 
   await page.locator('#chatInput').fill('sources');
   await page.keyboard.press('Enter');

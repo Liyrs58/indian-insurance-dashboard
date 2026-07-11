@@ -17,6 +17,7 @@ let comparisonMode = false;
 let comparisonCompanies = [];
 var demoMode = false;
 var demoInterval = null;
+var hashStateListenerBound = false;
 const WATCHLIST_KEY = 'irdai_watchlist';
 let watchlist = loadWatchlist();
 const SAVED_VIEWS_KEY = 'irdai_saved_views';
@@ -32,6 +33,10 @@ const DEFAULT_ALERT_CONFIG = {
 let alertConfig = loadAlertConfig();
 const COMMAND_HISTORY_KEY = 'irdai_command_history';
 const COMMAND_REGISTRY = [
+  { code: 'F1', label: 'Overview workspace' },
+  { code: 'F2', label: 'Life insurance workspace' },
+  { code: 'F3', label: 'Non-life insurance workspace' },
+  { code: 'F4', label: 'Segment comparison workspace' },
   { code: 'HELP', label: 'Open command palette' },
   { code: 'MKT', label: 'Market overview' },
   { code: 'TOPLIFE', label: 'Top life insurers' },
@@ -42,6 +47,8 @@ const COMMAND_REGISTRY = [
   { code: 'WLIST', label: 'Watchlist monitor' },
   { code: 'ALERTS', label: 'Alert thresholds' },
   { code: 'AUDIT', label: 'Data quality audit' },
+  { code: 'LINK', label: 'Share current workspace URL' },
+  { code: 'EXPORTCSV', label: 'Download current table CSV' },
   { code: 'EXPORTAUDIT', label: 'Download audit pack' },
   { code: 'VIEW <name>', label: 'Load saved view' },
 ];
@@ -264,7 +271,12 @@ function runMnemonicCommand(raw) {
   if (upper === 'TOPALL') { switchView('overview'); showChatTopCompanies('top 5'); return true; }
   if (upper === 'WLIST' || upper === 'WATCH') { showChatWatchlist(); return true; }
   if (upper === 'ALERTS') { showChatAlertConfig(); return true; }
+  if (upper === 'LINK' || upper === 'SHARE') { shareWorkspaceLink(); return true; }
   if (upper === 'AUDIT' || upper === 'SOURCES') { showAudit(); return true; }
+  if (upper === 'EXPORTCSV' || upper === 'CSV') {
+    try { exportCSV(); } catch(e) { chatSay('Could not export CSV. Make sure a table is visible.', false); }
+    return true;
+  }
   if (upper === 'EXPORTAUDIT') {
     try { exportAuditPack(); } catch(e) { chatSay('Could not export the audit pack.', false); }
     return true;
@@ -291,6 +303,78 @@ function runMnemonicCommand(raw) {
     return true;
   }
   return false;
+}
+
+function handleFunctionKey(key) {
+  var viewByKey = {
+    F1: 'overview',
+    F2: 'life',
+    F3: 'nonlife',
+    F4: 'compare',
+  };
+  var view = viewByKey[key];
+  if (!view) return false;
+  switchView(view);
+  return true;
+}
+
+function encodeWorkspaceState(state) {
+  var source = state || {};
+  var view = source.view || currentView || 'overview';
+  var month = source.month || selectedMonth;
+  var period = source.period || chartPeriod || 'all';
+  var params = new URLSearchParams();
+  params.set('view', view);
+  if (month) params.set('month', month);
+  params.set('period', period);
+  return params.toString();
+}
+
+function applyWorkspaceStateFromHash() {
+  if (!window.location.hash || !DATA) return null;
+  var params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  var view = params.get('view') || 'overview';
+  if (['overview', 'life', 'nonlife', 'compare'].indexOf(view) === -1) view = 'overview';
+  var period = params.get('period') || 'all';
+  if (['all', '6m', '3m', '1m'].indexOf(period) === -1) period = 'all';
+  chartPeriod = period;
+  var month = params.get('month');
+  var months = getMonthsForView(view);
+  if (month && months.indexOf(month) !== -1) {
+    selectedMonth = month;
+    viewMonthSelection[view] = month;
+  }
+  return { view: view, month: viewMonthSelection[view] || null, period: chartPeriod };
+}
+
+function buildWorkspaceLink() {
+  return window.location.href.split('#')[0] + '#' + encodeWorkspaceState();
+}
+
+function shareWorkspaceLink() {
+  var hash = encodeWorkspaceState();
+  window.location.hash = hash;
+  var link = buildWorkspaceLink();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).catch(function() {});
+  }
+  chatSay('Shareable workspace link:<br><span class="command-code">' + escapeHtml(link) + '</span>', false);
+}
+
+function applyWorkspaceStateFromHashAndRender() {
+  var workspace = applyWorkspaceStateFromHash();
+  if (!workspace) return false;
+  switchView(workspace.view);
+  syncPeriodButtons();
+  return true;
+}
+
+function setupHashState() {
+  if (hashStateListenerBound) return;
+  hashStateListenerBound = true;
+  window.addEventListener('hashchange', function() {
+    applyWorkspaceStateFromHashAndRender();
+  });
 }
 
 function isWatched(name) {
@@ -755,15 +839,19 @@ function init() {
   document.body.classList.remove('loading');
   updateClock();
   setInterval(updateClock, 1000);
+  var initialWorkspace = applyWorkspaceStateFromHash();
+  var initialView = initialWorkspace && initialWorkspace.view ? initialWorkspace.view : 'overview';
   renderMonthSelector();
   renderTicker();
   renderKPI();
-  renderView('overview');
+  renderView(initialView);
+  syncPeriodButtons();
   setInterval(refreshData, 300000);
   setupNav();
   setupKeys();
   setupChat();
   setupStatus();
+  setupHashState();
 }
 
 // ─── Theme ──────────────────────────────────────────────────────────
@@ -1189,6 +1277,7 @@ function setupKeys() {
       return;
     }
     if (e.key === 'r' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); refreshData(); return; }
+    if (handleFunctionKey(e.key)) { e.preventDefault(); return; }
     var tag = e.target && e.target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
     if (e.key === '?' || e.key === '/') { e.preventDefault(); showHelp(); return; }
@@ -1892,6 +1981,7 @@ function renderView(view) {
   else if (view === 'life') renderSegment('life');
   else if (view === 'nonlife') renderSegment('nonlife');
   else if (view === 'compare') renderCompare();
+  syncPeriodButtons();
 }
 
 // ─── Render Overview ────────────────────────────────────────────────
