@@ -150,6 +150,10 @@ test('secondary analytics follow the active view and terminal exposes data audit
   assert.match(source, /function generateBrief\(\) \{[\s\S]*?getActiveAnalysisScope\(\)/);
 
   assert.match(source, /function showAudit/);
+  assert.match(source, /function getSignedSourceAdjustments/);
+  assert.match(source, /SIGNED SOURCE ADJUSTMENTS/);
+  assert.match(source, /signed-source-adjustment/);
+  assert.match(source, /is-source-adjustment/);
   assert.match(source, /'audit'/);
   assert.match(source, /showAudit/);
   assert.match(source, /setupStatus/);

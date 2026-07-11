@@ -267,6 +267,21 @@ body::after {
 }
 .theme-toggle:hover { border-color: var(--amber); background: rgba(255,153,0,0.1); }
 
+.guide-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--gray);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 6px;
+  line-height: 1;
+  border-radius: 50%;
+  transition: all 0.15s;
+  font-family: var(--mono);
+  font-weight: 700;
+}
+.guide-btn:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(0,204,255,0.08); }
+
 .user-badge {
   font-size: 8px;
   color: var(--cyan);
@@ -493,11 +508,26 @@ body::after {
 
 .tabulator-row:hover { background: var(--bg3) !important; }
 .tabulator-row.is-watched { background: rgba(255,153,0,0.035) !important; }
+.tabulator-row.is-source-adjustment {
+  background: rgba(255, 153, 0, 0.055) !important;
+}
 .tabulator-row .tabulator-cell {
   padding: 3px 4px !important;
   border-right: none !important;
   color: var(--white) !important;
   font-size: var(--fs-xs) !important;
+}
+
+.source-adjustment-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 4px;
+  border: 1px solid rgba(255, 153, 0, 0.45);
+  color: var(--amber);
+  background: rgba(255, 153, 0, 0.08);
+  font-size: 7px;
+  line-height: 1.2;
+  vertical-align: middle;
 }
 
 .watch-toggle {
@@ -743,6 +773,73 @@ body::after {
 }
 
 .chat-send:hover { background: var(--amber); }
+
+/* ─── AI INSIGHT ────────────────────────────────────────── */
+.ai-insight-card {
+  background: linear-gradient(135deg, rgba(136,68,204,0.08), rgba(0,204,255,0.04));
+  border: 1px solid rgba(136,68,204,0.35);
+  padding: 8px 8px;
+  margin-bottom: 6px;
+  border-radius: 2px;
+}
+.ai-insight-header {
+  font-size: 8px;
+  color: var(--purple);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.ai-insight-body {
+  font-size: 9px;
+  color: var(--white);
+  line-height: 1.7;
+}
+.ai-insight-body strong { color: var(--purple); }
+
+/* ─── DEMO MODE ─────────────────────────────────────────── */
+body.demo-mode .status-dot {
+  background: var(--purple);
+  animation: demo-pulse 0.8s infinite;
+}
+@keyframes demo-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px var(--purple); }
+  50% { opacity: 0.3; box-shadow: 0 0 8px var(--purple); }
+}
+body.demo-mode #dataStatus {
+  color: var(--purple) !important;
+  font-weight: 700;
+}
+
+/* ─── GUIDE POPUP ───────────────────────────────────────── */
+.guide-section {
+  margin-bottom: 10px;
+}
+.guide-section-title {
+  color: var(--amber);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 3px;
+  margin-bottom: 4px;
+}
+.guide-item {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 6px;
+  padding: 2px 0;
+  font-size: 8px;
+  color: var(--gray);
+}
+.guide-item .guide-key {
+  color: var(--cyan);
+  font-weight: 600;
+}
+.guide-item .guide-desc {
+  color: var(--white);
+}
 
 /* ─── INSIGHT STYLES ───────────────────────────────────── */
 .insight-card {

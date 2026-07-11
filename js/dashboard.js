@@ -67,13 +67,6 @@ var FIELD_MAP = {
   seg: 'seg',
 };
 
-function getAvailableMonths() {
-  if (!DATA) return [];
-  var months = {};
-  DATA.life.monthly_data.concat(DATA.non_life.monthly_data).forEach(function(m) { months[m.month] = true; });
-  return Object.keys(months).sort();
-}
-
 function getSharedMonths() {
   if (!DATA) return [];
   var lifeMonths = {};
@@ -130,6 +123,28 @@ function segmentDisplayLabel(segment) {
   if (segment === 'non_life' || segment === 'nonlife') return 'Non-Life';
   if (segment === 'life') return 'Life';
   return String(segment || '').replace(/_/g, ' ');
+}
+
+function normalizeSegmentKey(segment) {
+  if (segment === 'Non-Life' || segment === 'nonlife') return 'non_life';
+  if (segment === 'Life') return 'life';
+  return segment || '';
+}
+
+function getSignedSourceAdjustments() {
+  var issues = DATA && DATA._meta && DATA._meta.validation ? DATA._meta.validation.issues || [] : [];
+  return issues.filter(function(issue) { return issue.code === 'signed_source_adjustment'; });
+}
+
+function isSignedSourceAdjustmentRow(row) {
+  if (!row) return false;
+  var rowSegment = normalizeSegmentKey(row._sourceSegment || row._segmentKey || row.segment || row.seg || row._seg);
+  var rowMonth = row._month || row.month || selectedMonth || '';
+  return getSignedSourceAdjustments().some(function(issue) {
+    return issue.insurer === row.name &&
+      normalizeSegmentKey(issue.segment) === rowSegment &&
+      (!issue.month || !rowMonth || issue.month === rowMonth);
+  });
 }
 
 function escapeHtml(value) {
@@ -894,6 +909,7 @@ function getNonLifeData(month) { return getMonthData('non_life', month); }
 
 // ─── Demo Playback ─────────────────────────────────────────────────
 function getAvailableMonths() {
+  if (!DATA) return [];
   var set = {};
   ['life', 'non_life'].forEach(function(k) {
     (DATA[k] ? DATA[k].monthly_data : []).forEach(function(m) { set[m.month] = true; });
@@ -913,6 +929,7 @@ function startDemoPlayback() {
   var months = getAvailableMonths();
   if (months.length < 2) { chatSay('Need at least 2 months for demo playback.', false); return; }
   demoMode = true;
+  document.body.classList.add('demo-mode');
   var idx = months.indexOf(selectedMonth);
   if (idx === -1) idx = 0;
   demoInterval = setInterval(function() {
@@ -928,6 +945,7 @@ function startDemoPlayback() {
 function stopDemoPlayback() {
   if (!demoMode) return;
   demoMode = false;
+  document.body.classList.remove('demo-mode');
   if (demoInterval) { clearInterval(demoInterval); demoInterval = null; }
   var el = document.getElementById('dataStatus');
   if (el) updateDataStatus();
@@ -971,6 +989,7 @@ function generateAuditPack() {
   var meta = DATA._meta;
   var validation = meta.validation || { status: 'unvalidated', issues: [] };
   var issues = validation.issues || [];
+  var signedAdjustments = getSignedSourceAdjustments();
   var hygiene = meta.source_hygiene || {};
   var scope = getActiveAnalysisScope();
   var counts = issues.reduce(function(acc, issue) {
@@ -1012,6 +1031,15 @@ function generateAuditPack() {
   (meta.source_links || []).forEach(function(src) {
     lines.push('- ' + src.name + ': ' + (src.latest_observed || src.url));
   });
+
+  lines.push('', '## Signed Source Adjustments');
+  if (!signedAdjustments.length) {
+    lines.push('- None tracked.');
+  } else {
+    signedAdjustments.forEach(function(issue) {
+      lines.push('- ' + issue.insurer + ' | ' + segmentDisplayLabel(issue.segment) + ' ' + issue.month + ' | premium ' + fmtCr(issue.premium_cr) + ' | share ' + fmtPct(issue.market_share_pct) + ' | source ' + (issue.source_file || '--') + ' | retained as reported');
+    });
+  }
 
   lines.push('', '## Validation Items');
   if (!issues.length) {
@@ -1085,7 +1113,7 @@ function generateOverviewAISummary(life, nonlife, total) {
   var text = 'The combined market stands at <strong>' + fmtCr(total) + '</strong>, with Life Insurance holding ' + lifeShare + '% share and Non-Life at ' + nonlifeShare + '%. ';
   text += 'Life is growing at <strong>' + fmtPct(lifeGrowth) + '</strong> YoY, while Non-Life is at <strong>' + fmtPct(nonlifeGrowth) + '</strong>. ';
   text += 'The top Life player is <strong>' + shortName(topLife.name) + '</strong> at ' + topLife.market_share_pct.toFixed(1) + '% share, and in Non-Life, <strong>' + shortName(topNonLife.name) + '</strong> leads at ' + topNonLife.market_share_pct.toFixed(1) + '%.';
-  return '<div class="insight-card" style="margin-top:6px;"><div class="label">AI INSIGHT</div><div class="desc" style="font-size:9px;margin-top:2px;line-height:1.6;color:var(--gray)">' + text + '</div></div>';
+  return '<div class="ai-insight-card"><div class="ai-insight-header">\u2728 AI INSIGHT</div><div class="ai-insight-body">' + text + '</div></div>';
 }
 
 function generateSegmentAISummary(latest, segment) {
@@ -1101,7 +1129,7 @@ function generateSegmentAISummary(latest, segment) {
   text += 'The top 3 insurers control ' + top3Share.toFixed(1) + '% of the market, with <strong>' + shortName(top.name) + '</strong> leading at ' + top.market_share_pct.toFixed(1) + '% share. ';
   if (growthLeaders > 0) text += 'There are ' + growthLeaders + ' insurers growing faster than 10% YoY with a meaningful premium base.';
   else text += 'No insurers are growing faster than 10% YoY with a meaningful premium base.';
-  return '<div class="insight-card" style="margin-top:6px;"><div class="label">AI INSIGHT</div><div class="desc" style="font-size:9px;margin-top:2px;line-height:1.6;color:var(--gray)">' + text + '</div></div>';
+  return '<div class="ai-insight-card"><div class="ai-insight-header">\u2728 AI INSIGHT</div><div class="ai-insight-body">' + text + '</div></div>';
 }
 
 function generateCompareAISummary(life, nonlife) {
@@ -1112,7 +1140,7 @@ function generateCompareAISummary(life, nonlife) {
   var leader = life.total_premium_cr > nonlife.total_premium_cr ? 'Life' : 'Non-Life';
   var text = leader + ' leads the market with a premium gap of <strong>' + fmtCr(gap) + '</strong>. ';
   text += 'Life holds ' + lifeShare + '% of the combined market (growing at ' + fmtPct(life.total_growth_pct) + '), while Non-Life holds ' + nonlifeShare + '% (growing at ' + fmtPct(nonlife.total_growth_pct) + '). ';
-  return '<div class="insight-card" style="margin-top:6px;"><div class="label">AI INSIGHT</div><div class="desc" style="font-size:9px;margin-top:2px;line-height:1.6;color:var(--gray)">' + text + '</div></div>';
+  return '<div class="ai-insight-card"><div class="ai-insight-header">\u2728 AI INSIGHT</div><div class="ai-insight-body">' + text + '</div></div>';
 }
 
 // ─── Ticker ─────────────────────────────────────────────────────────
@@ -1261,6 +1289,8 @@ function setupNav() {
   });
   var themeBtn = document.getElementById('themeToggle');
   if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+  var guideBtn = document.getElementById('guideBtn');
+  if (guideBtn) guideBtn.addEventListener('click', showGuide);
 }
 
 function setupKeys() {
@@ -1539,6 +1569,22 @@ function processChatInput(raw) {
     if (playerTab) { playerTab.click(); chatSay('Showing <strong>Top Players</strong> tab.', false); }
     return;
   }
+  if (lower.indexOf('guide') !== -1 || lower === 'what does everything do' || lower === 'how to use' || lower === 'features') {
+    showGuide(); chatSay('Opened the full terminal guide popup above.', false); return;
+  }
+  if (lower.indexOf('ai insight') !== -1 || lower.indexOf('ai analysis') !== -1 || lower.indexOf('auto analysis') !== -1) {
+    chatSay('<strong>AI Insight</strong> generates a natural-language market analysis paragraph at the top of the INSIGHTS tab for every view (Overview, Life, Non-Life, Compare). It appears automatically — no command needed. Look for the purple <strong>\u2728 AI INSIGHT</strong> card.', false); return;
+  }
+  if (lower.indexOf('demo') !== -1 || lower.indexOf('playback') !== -1 || lower.indexOf('auto') !== -1) {
+    chatSay('<strong>Demo mode</strong> auto-steps through all available months every 3 seconds. Type <strong>demo</strong> to start and <strong>stop demo</strong> to end. The status dot turns purple when active.', false); return;
+  }
+  if (lower.indexOf('theme') !== -1 || lower.indexOf('light') !== -1 || lower.indexOf('dark') !== -1 || lower.indexOf('toggle') !== -1) {
+    chatSay('Click the <strong>\u25D0</strong> button in the top-right corner (next to IRDAI) to toggle between dark and light themes. Your preference is saved automatically.', false); return;
+  }
+  if (lower.indexOf('risk bar') !== -1 || lower.indexOf('hhi') !== -1 || lower.indexOf('concentration') !== -1) {
+    activatePanelTab(document.querySelector('.panel-left'), 'hhi');
+    chatSay('The <strong>CONCENTRATION (HHI)</strong> tab shows animated risk bars representing market concentration. Switch to it in the left panel\'s tabs.', false); return;
+  }
   if (lower === 'hello' || lower === 'hi' || lower === 'hey' || lower === 'namaste') {
     chatSay('Hello! I can help you explore the Indian insurance market. Try asking about a specific company or type <strong>help</strong>.', false); return;
   }
@@ -1552,6 +1598,7 @@ function processChatInput(raw) {
 function showChatHelp() {
   chatSay(
     'Here\'s what I can help you with:<br><br>' +
+    '<strong>Guide</strong> — Press the <strong>?</strong> button in the top bar for a full terminal guide, or type any question below<br>' +
     '<strong>Companies</strong> — "Tell me about LIC", "What is ICICI Lombard?", "Show me SBI Life"<br>' +
     '<strong>Compare</strong> — "Compare LIC vs HDFC Life", "Compare ICICI Lombard, New India"<br>' +
     '<strong>Market</strong> — "What\'s the total market premium?", "Show me penetration", "Market size"<br>' +
@@ -1564,6 +1611,9 @@ function showChatHelp() {
     '<strong>Search</strong> — "Find Star Health", "Search ICICI"<br>' +
     '<strong>Stocks</strong> — "What\'s the NSE price of LIC?", "Stock of ICICI Prudential"<br>' +
     '<strong>Demo</strong> — "Demo" to start auto-playback, "Stop demo" to end<br>' +
+    '<strong>AI Insight</strong> — Auto-generated analysis in the Insights tab (every view)<br>' +
+    '<strong>Theme</strong> — Click the <strong>\u25D0</strong> button to toggle dark/light mode<br>' +
+    '<strong>HHI Risk Bars</strong> — Go to the CONCENTRATION tab for animated risk bars<br>' +
     '<strong>Exit</strong> — "Exit comparison", "Clear search"', false);
 }
 
@@ -1841,14 +1891,18 @@ function updateDataStatus(state) {
   } else if (state === 'snapshot' && DATA && DATA._meta) {
     var ts = DATA._meta.research_as_of || DATA._meta.last_updated || DATA._meta.generated_at || 'unknown';
     var validation = DATA._meta.validation ? DATA._meta.validation.status : 'ok';
+    var signedAdjustmentCount = getSignedSourceAdjustments().length;
     var isStale = false;
     if (ts && ts.length === 10 && ts.indexOf('-') === 4) {
       var snapshotDate = new Date(ts + 'T00:00:00');
       var daysOld = (Date.now() - snapshotDate.getTime()) / 86400000;
       isStale = daysOld > 7;
     }
-    el.textContent = 'SNAPSHOT: ' + ts + (validation !== 'ok' ? ' · ' + validation.toUpperCase() : '') + (isStale ? ' · STALE' : '');
-    var statusColor = validation === 'error' ? 'var(--red)' : (isStale ? 'var(--amber)' : (validation === 'warning' ? 'var(--amber)' : 'var(--green)'));
+    el.textContent = 'SNAPSHOT: ' + ts +
+      (validation !== 'ok' ? ' · ' + validation.toUpperCase() : '') +
+      (signedAdjustmentCount ? ' · ' + signedAdjustmentCount + ' SRC ADJ' : '') +
+      (isStale ? ' · STALE' : '');
+    var statusColor = validation === 'error' ? 'var(--red)' : (isStale || signedAdjustmentCount ? 'var(--amber)' : (validation === 'warning' ? 'var(--amber)' : 'var(--green)'));
     el.style.color = statusColor;
     if (dot) dot.style.background = statusColor;
   } else {
@@ -1866,6 +1920,7 @@ function showAudit() {
   var meta = DATA._meta;
   var validation = meta.validation || { status: 'unvalidated', issues: [] };
   var issues = validation.issues || [];
+  var signedAdjustments = getSignedSourceAdjustments();
   var counts = issues.reduce(function(acc, issue) {
     acc[issue.severity] = (acc[issue.severity] || 0) + 1;
     return acc;
@@ -1904,6 +1959,13 @@ function showAudit() {
   var hygieneNoteHtml = (duplicateHtml || mismatchHtml)
     ? duplicateHtml + mismatchHtml
     : '<div class="audit-note">No duplicate or filename/header source exceptions detected.</div>';
+  var signedAdjustmentHtml = signedAdjustments.length ? signedAdjustments.map(function(issue) {
+    return '<div class="audit-issue signed-source-adjustment">' +
+      '<span style="color:var(--amber)">SRC ADJ</span>' +
+      '<span>' + escapeHtml(segmentDisplayLabel(issue.segment) + ' ' + (issue.month || '--')) + '</span>' +
+      '<span>' + escapeHtml(issue.insurer || '--') + ' · ' + escapeHtml(fmtCr(issue.premium_cr)) + ' · ' + escapeHtml(fmtPct(issue.market_share_pct)) + ' · ' + escapeHtml(issue.source_file || '--') + '</span>' +
+    '</div>';
+  }).join('') : '<div class="audit-note">No signed negative source adjustments tracked.</div>';
   var issueHtml = issues.slice(0, 8).map(function(issue) {
     var color = issue.severity === 'error' ? 'var(--red)' : (issue.severity === 'warning' ? 'var(--amber)' : 'var(--gray2)');
     return '<div class="audit-issue">' +
@@ -1931,6 +1993,7 @@ function showAudit() {
     '<div class="audit-row"><span>Info</span><span style="color:var(--gray2)">' + (counts.info || 0) + '</span></div>' +
     '<div class="section-label">PRIMARY SOURCES</div>' + sourceHtml +
     '<div class="section-label">SOURCE HYGIENE</div>' + hygieneRows + hygieneNoteHtml +
+    '<div class="section-label">SIGNED SOURCE ADJUSTMENTS</div>' + signedAdjustmentHtml +
     '<div class="section-label">TOP VALIDATION ITEMS</div>' + issueHtml +
     '<div class="section-label">EXTRACTION NOTES</div>' + notesHtml
   );
@@ -1944,6 +2007,70 @@ function showPopup(title, body) {
 }
 function closePopup() {
   document.getElementById('popup').classList.remove('show');
+}
+
+// ─── Guide ─────────────────────────────────────────────────────────
+function showGuide() {
+  showPopup('IRDAI TERMINAL GUIDE',
+    '<div class="guide-section">' +
+      '<div class="guide-section-title">Views</div>' +
+      '<div class="guide-item"><span class="guide-key">F1 / Overview</span><span class="guide-desc">Combined life + non-life market snapshot</span></div>' +
+      '<div class="guide-item"><span class="guide-key">F2 / Life</span><span class="guide-desc">Life insurance segment only</span></div>' +
+      '<div class="guide-item"><span class="guide-key">F3 / Non-Life</span><span class="guide-desc">Non-life / general insurance segment</span></div>' +
+      '<div class="guide-item"><span class="guide-key">F4 / Compare</span><span class="guide-desc">Life vs Non-Life side-by-side</span></div>' +
+    '</div>' +
+    '<div class="guide-section">' +
+      '<div class="guide-section-title">Panels</div>' +
+      '<div class="guide-item"><span class="guide-key">TABLE</span><span class="guide-desc">Insurer rankings by premium, YoY growth, market share</span></div>' +
+      '<div class="guide-item"><span class="guide-key">CONCENTRATION</span><span class="guide-desc">HHI index + risk bars showing market concentration</span></div>' +
+      '<div class="guide-item"><span class="guide-key">MOVERS</span><span class="guide-desc">Fastest growing & shrinking insurers</span></div>' +
+      '<div class="guide-item"><span class="guide-key">INSIGHTS</span><span class="guide-desc">Key metrics + AI-generated market analysis</span></div>' +
+      '<div class="guide-item"><span class="guide-key">TOP PLAYERS</span><span class="guide-desc">Top 8 insurers ranked by premium</span></div>' +
+      '<div class="guide-item"><span class="guide-key">PENETRATION</span><span class="guide-desc">Insurance penetration & density vs global</span></div>' +
+      '<div class="guide-item"><span class="guide-key">BRIEF</span><span class="guide-desc">Long-form market analysis summary</span></div>' +
+    '</div>' +
+    '<div class="guide-section">' +
+      '<div class="guide-section-title">Features</div>' +
+      '<div class="guide-item"><span class="guide-key">\u2728 AI Insight</span><span class="guide-desc">Auto-generated natural-language market analysis in the Insights tab</span></div>' +
+      '<div class="guide-item"><span class="guide-key">\u25B6 Demo</span><span class="guide-desc">Type "demo" in chat to auto-step through months; "stop demo" to end</span></div>' +
+      '<div class="guide-item"><span class="guide-key">\u25D0 Theme</span><span class="guide-desc">Toggle light/dark mode with the button in the top bar</span></div>' +
+      '<div class="guide-item"><span class="guide-key">\u2605 Watchlist</span><span class="guide-desc">Star any insurer to monitor alerts; view in INSIGHTS panel</span></div>' +
+      '<div class="guide-item"><span class="guide-key">\u2691 Company Compare</span><span class="guide-desc">Type "Compare LIC vs HDFC Life" in chat</span></div>' +
+      '<div class="guide-item"><span class="guide-key">\uD83D\uDCC4 Export</span><span class="guide-desc">"Export" = CSV, "Export PDF" = print dialog, "Export audit" = Markdown</span></div>' +
+      '<div class="guide-item"><span class="guide-key">\uD83D\uDD0D Search / Filter</span><span class="guide-desc">Type "find Star Health" or "Search ICICI" in chat</span></div>' +
+    '</div>' +
+    '<div class="guide-section">' +
+      '<div class="guide-section-title">Chat Commands</div>' +
+      '<div class="guide-item"><span class="guide-key">help / ?</span><span class="guide-desc">Show chatbot capabilities</span></div>' +
+      '<div class="guide-item"><span class="guide-key">tell me about LIC</span><span class="guide-desc">Company profile + stats</span></div>' +
+      '<div class="guide-item"><span class="guide-key">top 5 life</span><span class="guide-desc">Largest insurers in a segment</span></div>' +
+      '<div class="guide-item"><span class="guide-key">market overview</span><span class="guide-desc">Total market, penetration, density</span></div>' +
+      '<div class="guide-item"><span class="guide-key">watch / unwatch</span><span class="guide-desc">Add or remove from watchlist</span></div>' +
+      '<div class="guide-item"><span class="guide-key">save view / load view</span><span class="guide-desc">Persist current workspace layout</span></div>' +
+      '<div class="guide-item"><span class="guide-key">alert config</span><span class="guide-desc">View/change watchlist thresholds</span></div>' +
+      '<div class="guide-item"><span class="guide-key">data audit</span><span class="guide-desc">Source hygiene + validation report</span></div>' +
+      '<div class="guide-item"><span class="guide-key">refresh</span><span class="guide-desc">Re-fetch data from server</span></div>' +
+      '<div class="guide-item"><span class="guide-key">stocks / nse</span><span class="guide-desc">Insurance stock prices</span></div>' +
+    '</div>' +
+    '<div class="guide-section">' +
+      '<div class="guide-section-title">Hotkeys</div>' +
+      '<div class="guide-item"><span class="guide-key">1 2 3 4</span><span class="guide-desc">Switch views (Overview, Life, Non-Life, Compare)</span></div>' +
+      '<div class="guide-item"><span class="guide-key">?</span><span class="guide-desc">Show chatbot help</span></div>' +
+      '<div class="guide-item"><span class="guide-key">F</span><span class="guide-desc">Fit chart to data</span></div>' +
+      '<div class="guide-item"><span class="guide-key">E</span><span class="guide-desc">Toggle EMA overlay on chart</span></div>' +
+      '<div class="guide-item"><span class="guide-key">I</span><span class="guide-desc">Show market splash / overview</span></div>' +
+      '<div class="guide-item"><span class="guide-key">Ctrl+K</span><span class="guide-desc">Focus chat input</span></div>' +
+      '<div class="guide-item"><span class="guide-key">Esc</span><span class="guide-desc">Close popup</span></div>' +
+      '<div class="guide-item"><span class="guide-key">Double-click chart</span><span class="guide-desc">Toggle fullscreen chart</span></div>' +
+    '</div>' +
+    '<div class="guide-section">' +
+      '<div class="guide-section-title">Data Notes</div>' +
+      '<div class="guide-item"><span class="guide-key">Source</span><span class="guide-desc">IRDAI Flash Figures (provisional, unaudited)</span></div>' +
+      '<div class="guide-item"><span class="guide-key">Periods</span><span class="guide-desc">Cumulative YTD; resets at fiscal-year boundaries</span></div>' +
+      '<div class="guide-item"><span class="guide-key">Compare</span><span class="guide-desc">Always use shared months when comparing segments</span></div>' +
+      '<div class="guide-item"><span class="guide-key">NSE Data</span><span class="guide-desc">Refreshed hourly; may be delayed</span></div>' +
+    '</div>'
+  );
 }
 
 // ─── Render View ────────────────────────────────────────────────────
@@ -2095,6 +2222,9 @@ function enrichInsurers(insurers, segment, month) {
 
   return insurers.map(function(ins) {
     var r = Object.assign({}, ins);
+    r._sourceSegment = segKey;
+    r._month = month;
+    r._sourceAdjustment = isSignedSourceAdjustmentRow(r);
     // Market share change vs prev month
     if (prevByName[ins.name]) {
       r.share_chg_pp = parseFloat((ins.market_share_pct - prevByName[ins.name].market_share_pct).toFixed(2));
@@ -2145,7 +2275,11 @@ function buildTable(data, columns, colDefs) {
     } else if (key === 'rank') {
       formatter = function(c) { return '<span style="color:var(--gray)">' + c.getValue() + '</span>'; };
     } else if (key === 'name') {
-      formatter = function(c) { return '<span style="color:var(--cyan);font-weight:600">' + c.getValue() + '</span>'; };
+      formatter = function(c) {
+        var d = c.getRow().getData();
+        var badge = d._sourceAdjustment ? '<span class="source-adjustment-badge" title="Signed negative source adjustment retained as reported">SRC ADJ</span>' : '';
+        return '<span style="color:var(--cyan);font-weight:600">' + escapeHtml(c.getValue()) + '</span>' + badge;
+      };
     } else if (key === 'segment' || key === 'seg') {
       formatter = function(c) {
         var v = c.getValue();
@@ -2153,7 +2287,10 @@ function buildTable(data, columns, colDefs) {
         return '<span style="color:var(--' + cls + ')">' + v + '</span>';
       };
     } else if (key === 'premium') {
-      formatter = function(c) { return '<span style="color:var(--white);font-variant-numeric:tabular-nums">' + fmtCr(c.getValue()) + '</span>'; };
+      formatter = function(c) {
+        var color = c.getValue() < 0 ? 'var(--amber)' : 'var(--white)';
+        return '<span style="color:' + color + ';font-variant-numeric:tabular-nums">' + fmtCr(c.getValue()) + '</span>';
+      };
     } else if (key === 'share') {
       formatter = function(c) {
         var v = c.getValue();
@@ -2230,6 +2367,7 @@ function buildTable(data, columns, colDefs) {
         row.getElement().style.borderLeft = '2px solid rgba(0,204,255,0.3)';
       }
       row.getElement().classList.toggle('is-watched', isWatched(d.name));
+      row.getElement().classList.toggle('is-source-adjustment', !!d._sourceAdjustment);
     },
   });
 
@@ -2698,6 +2836,7 @@ function renderOverviewInsights(life, nonlife) {
       '<div class="value" style="color:var(--amber)">' + fmtCr(total) + '</div>' +
       '<div class="desc">Combined life + non-life for current period</div>' +
     '</div>' +
+    generateOverviewAISummary(life, nonlife, total) +
     '<div class="insight-grid">' +
       '<div class="insight-card">' +
         '<div class="label">Life Share</div>' +
@@ -2725,8 +2864,7 @@ function renderOverviewInsights(life, nonlife) {
       '<div class="value" style="color:var(--purple)">' + (DATA.summary.global_penetration_avg_pct - DATA.summary.insurance_penetration_pct).toFixed(1) + 'pp</div>' +
       '<div class="desc">Below global average of ' + DATA.summary.global_penetration_avg_pct + '%</div>' +
     '</div>' +
-    renderWatchlistMonitorHtml() +
-    generateOverviewAISummary(life, nonlife, total);
+    renderWatchlistMonitorHtml();
 }
 
 function renderSegmentInsights(latest, segment) {
@@ -2745,6 +2883,7 @@ function renderSegmentInsights(latest, segment) {
       '<div class="value" style="color:' + color + '">' + fmtCr(latest.total_premium_cr) + '</div>' +
       '<div class="desc">YoY: ' + fmtPct(latest.total_growth_pct) + '</div>' +
     '</div>' +
+    generateSegmentAISummary(latest, segment) +
     '<div class="insight-grid">' +
       '<div class="insight-card">' +
         '<div class="label">Top 3 Concentration</div>' +
@@ -2767,8 +2906,7 @@ function renderSegmentInsights(latest, segment) {
         '<div class="desc">Growing >10% YoY</div>' +
       '</div>' +
     '</div>' +
-    renderWatchlistMonitorHtml() +
-    generateSegmentAISummary(latest, segment);
+    renderWatchlistMonitorHtml();
 }
 
 function renderCompareInsights(life, nonlife) {
@@ -2778,6 +2916,7 @@ function renderCompareInsights(life, nonlife) {
       '<div class="value" style="color:var(--amber)">' + fmtCr(Math.abs(life.total_premium_cr - nonlife.total_premium_cr)) + '</div>' +
       '<div class="desc">' + (life.total_premium_cr > nonlife.total_premium_cr ? 'Life' : 'Non-Life') + ' leads</div>' +
     '</div>' +
+    generateCompareAISummary(life, nonlife) +
     '<div class="insight-grid">' +
       '<div class="insight-card">' +
         '<div class="label">Life YoY Growth</div>' +
@@ -2793,8 +2932,7 @@ function renderCompareInsights(life, nonlife) {
       '<div class="value" style="color:var(--amber)">' + fmtCr(life.total_premium_cr + nonlife.total_premium_cr) + '</div>' +
       '<div class="desc">Life: ' + Math.round(life.total_premium_cr / (life.total_premium_cr + nonlife.total_premium_cr) * 100) + '% | Non-Life: ' + Math.round(nonlife.total_premium_cr / (life.total_premium_cr + nonlife.total_premium_cr) * 100) + '%</div>' +
     '</div>' +
-    renderWatchlistMonitorHtml() +
-    generateCompareAISummary(life, nonlife);
+    renderWatchlistMonitorHtml();
 }
 
 // ─── Top Players Tab ────────────────────────────────────────────────

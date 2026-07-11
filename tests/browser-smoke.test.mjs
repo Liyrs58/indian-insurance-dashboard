@@ -105,6 +105,7 @@ try {
   }));
 
   assert.match(desktop.status, /SNAPSHOT: 2026-07-07/);
+  assert.match(desktop.status, /2 SRC ADJ/);
   assert.doesNotMatch(desktop.status, /WARNING|ERROR/);
   assert.equal(desktop.tableTitle, 'ALL INSURERS');
   assert.equal(desktop.tableMonth, '2026-05 shared');
@@ -130,6 +131,12 @@ try {
   const csvText = await readFile(await csvDownload.path(), 'utf8');
   assert.match(csvText, /NAME,PREMIUM_CR,.*MARKET_SHARE_PCT/);
   assert.match(csvText, /Life Insurance Corporation of India|New India Assurance/);
+  await page.locator('#chatInput').fill('FIND Agriculture Insurance Company of India');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => {
+    const row = Array.from(document.querySelectorAll('.tabulator-row')).find((node) => node.textContent.includes('Agriculture Insurance Company of India'));
+    return row && row.classList.contains('is-source-adjustment') && row.textContent.includes('SRC ADJ');
+  }, null, { timeout: 5000 });
   await page.goto(server.baseUrl, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.tabulator-row', { timeout: 20000 });
   await page.waitForFunction(() => document.querySelector('#tableTitle')?.textContent === 'ALL INSURERS', null, { timeout: 5000 });
@@ -209,6 +216,9 @@ try {
   assert.match(auditText, /DATA QUALITY AUDIT/);
   assert.match(auditText, /PRIMARY SOURCES/);
   assert.match(auditText, /SOURCE HYGIENE/);
+  assert.match(auditText, /SIGNED SOURCE ADJUSTMENTS/);
+  assert.match(auditText, /Agriculture Insurance Company of India/);
+  assert.match(auditText, /NonLife_GDP_June2026\.pdf/);
   assert.match(auditText, /Records retained/);
   assert.match(auditText, /Dropped duplicates/);
   assert.match(auditText, /Filename\/header mismatches/);
@@ -232,6 +242,8 @@ try {
   const auditPackText = await readFile(auditPackPath, 'utf8');
   assert.match(auditPackText, /IRDAI Insurance Terminal Audit Pack/);
   assert.match(auditPackText, /Validation Status: OK/);
+  assert.match(auditPackText, /Signed Source Adjustments/);
+  assert.match(auditPackText, /Agriculture Insurance Company of India/);
   assert.match(auditPackText, /Source Hygiene/);
   assert.match(auditPackText, /Watchlist Monitor/);
   assert.match(auditPackText, /Growth surge: 12%/);
