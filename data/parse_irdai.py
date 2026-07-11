@@ -302,7 +302,7 @@ def month_record_score(record):
         score += 1
     return score
 
-def dedupe_month_records(records, segment_name):
+def dedupe_month_records(records, segment_name, duplicate_resolutions=None):
     by_month = {}
     for record in records:
         month = record['month']
@@ -314,6 +314,11 @@ def dedupe_month_records(records, segment_name):
         keep, drop = current, record
         if month_record_score(record) > month_record_score(current):
             keep, drop = record, current
+        reason = (
+            "higher month-source confidence"
+            if month_record_score(keep) != month_record_score(drop)
+            else "first record retained on equal confidence"
+        )
         note = (
             f"Duplicate {segment_name} month {month}: kept {keep['source_file']} "
             f"and dropped {drop['source_file']}"
@@ -321,9 +326,39 @@ def dedupe_month_records(records, segment_name):
         print(f"  WARNING: {note}")
         notes = keep.setdefault('extraction_notes', [])
         notes.append(note)
+        if duplicate_resolutions is not None:
+            duplicate_resolutions.append({
+                "segment": segment_name,
+                "month": month,
+                "kept_source_file": keep['source_file'],
+                "dropped_source_file": drop['source_file'],
+                "reason": reason,
+            })
         by_month[month] = keep
 
     return sorted(by_month.values(), key=lambda x: x['month'])
+
+def build_source_hygiene(raw_files_processed, loaded_records, retained_records, duplicate_resolutions):
+    mismatches = []
+    for record in loaded_records:
+        filename_month = record.get('filename_month')
+        header_month = record.get('header_month')
+        if filename_month and header_month and filename_month != header_month:
+            mismatches.append({
+                "source_file": record.get('source_file'),
+                "filename_month": filename_month,
+                "header_month": header_month,
+                "selected_month": record.get('month'),
+            })
+
+    return {
+        "raw_files_processed": raw_files_processed,
+        "records_loaded": len(loaded_records),
+        "records_retained": len(retained_records),
+        "records_dropped": max(0, len(loaded_records) - len(retained_records)),
+        "filename_header_mismatches": mismatches,
+        "duplicate_resolutions": duplicate_resolutions,
+    }
 
 def parse_non_life_excel(filepath, filename):
     """Parse non-life Excel file and extract insurer data"""
@@ -399,7 +434,7 @@ def parse_non_life_excel(filepath, filename):
     negative_prems = [i for i in insurers if i['premium_cr'] < 0]
     if negative_prems:
         for n in negative_prems:
-            print(f"  WARNING: Negative premium for {n['name']}: {n['premium_cr']} Cr")
+            print(f"  NOTE: Signed negative source premium for {n['name']}: {n['premium_cr']} Cr")
 
     # Flag extreme growth values
     extreme = [i for i in insurers if abs(i['yoy_growth_pct']) > 300]
@@ -523,7 +558,7 @@ def parse_life_excel(filepath, filename):
     negative_prems = [i for i in insurers if i['premium_cr'] < 0]
     if negative_prems:
         for n in negative_prems:
-            print(f"  WARNING: Negative premium for {n['name']}: {n['premium_cr']} Cr")
+            print(f"  NOTE: Signed negative source premium for {n['name']}: {n['premium_cr']} Cr")
 
     # Flag extreme growth values
     extreme = [i for i in insurers if abs(i['yoy_growth_pct']) > 300]
@@ -622,6 +657,13 @@ def build_validation(life_data, non_life_data):
         item.update(extra)
         issues.append(item)
 
+    def is_fiscal_year_reset(prev, curr):
+        return (
+            prev.get('fiscal_year') != curr.get('fiscal_year')
+            and prev.get('period_type') == 'cumulative_ytd'
+            and curr.get('period_type') == 'cumulative_ytd'
+        )
+
     for segment_name, segment_data in [('life', life_data), ('non_life', non_life_data)]:
         for month_data in segment_data:
             share_sum = sum(i.get('market_share_pct') or 0 for i in month_data['insurers'])
@@ -639,14 +681,15 @@ def build_validation(life_data, non_life_data):
             for insurer in month_data['insurers']:
                 if insurer.get('premium_cr', 0) < 0 or insurer.get('market_share_pct', 0) < 0:
                     add(
-                        "warning",
-                        "negative_value",
-                        f"{insurer['name']} has a negative premium/share in {segment_name} {month_data['month']}",
+                        "info",
+                        "signed_source_adjustment",
+                        f"{insurer['name']} has a signed negative source premium/share in {segment_name} {month_data['month']}; retained as reported",
                         segment=segment_name,
                         month=month_data['month'],
                         insurer=insurer['name'],
                         premium_cr=insurer.get('premium_cr'),
                         market_share_pct=insurer.get('market_share_pct'),
+                        source_file=month_data.get('source_file'),
                     )
                 if abs(insurer.get('yoy_growth_pct') or 0) > 300:
                     add(
@@ -672,16 +715,30 @@ def build_validation(life_data, non_life_data):
                     value=curr['total_premium_cr'],
                 )
             if prev['total_premium_cr'] and curr['total_premium_cr'] / prev['total_premium_cr'] < 0.5:
-                add(
-                    "warning",
-                    "large_period_drop",
-                    f"{segment_name} premium drops more than 50%; likely fiscal-year reset or mixed basis",
-                    segment=segment_name,
-                    from_month=prev['month'],
-                    to_month=curr['month'],
-                    from_value=prev['total_premium_cr'],
-                    to_value=curr['total_premium_cr'],
-                )
+                if is_fiscal_year_reset(prev, curr):
+                    add(
+                        "info",
+                        "fiscal_year_reset",
+                        f"{segment_name} cumulative YTD premium resets between fiscal years",
+                        segment=segment_name,
+                        from_month=prev['month'],
+                        to_month=curr['month'],
+                        from_value=prev['total_premium_cr'],
+                        to_value=curr['total_premium_cr'],
+                        from_fiscal_year=prev.get('fiscal_year'),
+                        to_fiscal_year=curr.get('fiscal_year'),
+                    )
+                else:
+                    add(
+                        "warning",
+                        "large_period_drop",
+                        f"{segment_name} premium drops more than 50%; check for source-period mismatch",
+                        segment=segment_name,
+                        from_month=prev['month'],
+                        to_month=curr['month'],
+                        from_value=prev['total_premium_cr'],
+                        to_value=curr['total_premium_cr'],
+                    )
 
     life_months = {d['month'] for d in life_data}
     non_life_months = {d['month'] for d in non_life_data}
@@ -732,7 +789,8 @@ def write_analysis_summary(output_data, output_path):
         "## Data Caveats",
         "- Figures are provisional and unaudited where source flash reports say so.",
         "- Cumulative YTD figures reset at fiscal-year boundaries; avoid reading fiscal resets as market collapses.",
-        "- Validation warnings are stored in data/irdai-processed.json under _meta.validation.",
+        "- Source-hygiene metadata records raw files processed, duplicate resolutions, and filename/header month mismatches.",
+        "- Validation issues and source caveats are stored in data/irdai-processed.json under _meta.validation.",
     ])
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write("\n".join(lines) + "\n")
@@ -750,12 +808,14 @@ def main():
     
     non_life_data = []
     life_data = []
+    raw_files_processed = 0
     
     # Process local raw files. XLSX files come from the original IRDAI-style archive;
     # the July 7 non-life flash release is currently published by GIC as PDF.
     for filename in os.listdir(data_dir):
         if filename.endswith('.xlsx') or filename.endswith('.pdf'):
             filepath = os.path.join(data_dir, filename)
+            raw_files_processed += 1
             print(f"Processing: {filename}")
             
             if filename.endswith('.pdf') and 'NonLife' in filename:
@@ -774,10 +834,14 @@ def main():
                     life_data.append(data)
                     print(f"  Found {len(data['insurers'])} insurers, Total: {data['total_premium_cr']} Cr")
     
+    loaded_records = non_life_data + life_data
+    duplicate_resolutions = []
+
     # Resolve duplicate records after header-based month detection. This catches
     # mislabeled local files before they can create fake periods in the UI.
-    non_life_data = dedupe_month_records(non_life_data, 'non-life')
-    life_data = dedupe_month_records(life_data, 'life')
+    non_life_data = dedupe_month_records(non_life_data, 'non_life', duplicate_resolutions)
+    life_data = dedupe_month_records(life_data, 'life', duplicate_resolutions)
+    retained_records = non_life_data + life_data
 
     # Get all available months
     all_months = sorted(set([d['month'] for d in non_life_data] + [d['month'] for d in life_data]))
@@ -798,6 +862,12 @@ def main():
     non_life_premium = comparable_non_life['total_premium_cr'] if comparable_non_life else 0
     total_market_premium = life_premium + non_life_premium
     validation = build_validation(life_data, non_life_data)
+    source_hygiene = build_source_hygiene(
+        raw_files_processed,
+        loaded_records,
+        retained_records,
+        duplicate_resolutions,
+    )
     
     # Create output JSON
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -814,6 +884,7 @@ def main():
             "latest_non_life_month": latest_non_life['month'] if latest_non_life else None,
             "source_links": SOURCE_LINKS,
             "validation": validation,
+            "source_hygiene": source_hygiene,
             "notes": "Data extracted from local IRDAI/GIC flash source files. Headline market totals use the latest shared life/non-life month only."
         },
         "non_life": {

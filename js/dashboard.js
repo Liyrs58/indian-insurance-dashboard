@@ -15,6 +15,38 @@ let selectedMonth = null;
 let viewMonthSelection = {};
 let comparisonMode = false;
 let comparisonCompanies = [];
+var demoMode = false;
+var demoInterval = null;
+const WATCHLIST_KEY = 'irdai_watchlist';
+let watchlist = loadWatchlist();
+const SAVED_VIEWS_KEY = 'irdai_saved_views';
+let savedViews = loadSavedViews();
+const ALERT_CONFIG_KEY = 'irdai_alert_config';
+const DEFAULT_ALERT_CONFIG = {
+  riskDropPct: -10,
+  growthSurgePct: 20,
+  shareMovePp: 1,
+  watchGrowthPct: 10,
+  watchShareMovePp: 0.5,
+};
+let alertConfig = loadAlertConfig();
+const COMMAND_HISTORY_KEY = 'irdai_command_history';
+const COMMAND_REGISTRY = [
+  { code: 'HELP', label: 'Open command palette' },
+  { code: 'MKT', label: 'Market overview' },
+  { code: 'TOPLIFE', label: 'Top life insurers' },
+  { code: 'TOPNL', label: 'Top non-life insurers' },
+  { code: 'TOPALL', label: 'Top insurers across segments' },
+  { code: 'FIND <name>', label: 'Search table and profiles' },
+  { code: 'COMPARE <a> VS <b>', label: 'Company comparison' },
+  { code: 'WLIST', label: 'Watchlist monitor' },
+  { code: 'ALERTS', label: 'Alert thresholds' },
+  { code: 'AUDIT', label: 'Data quality audit' },
+  { code: 'EXPORTAUDIT', label: 'Download audit pack' },
+  { code: 'VIEW <name>', label: 'Load saved view' },
+];
+let commandHistory = loadCommandHistory();
+let commandHistoryIndex = -1;
 
 var FIELD_MAP = {
   premium: 'premium_cr',
@@ -97,6 +129,351 @@ function escapeHtml(value) {
   return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
     return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
   });
+}
+
+function loadWatchlist() {
+  try {
+    var parsed = JSON.parse(localStorage.getItem(WATCHLIST_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.filter(function(name) { return typeof name === 'string' && name.trim(); }) : [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function saveWatchlist() {
+  watchlist = watchlist.filter(function(name, idx, arr) { return name && arr.indexOf(name) === idx; }).sort();
+  try { localStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist)); } catch(e) {}
+}
+
+function normalizeAlertConfig(candidate) {
+  var config = Object.assign({}, DEFAULT_ALERT_CONFIG);
+  Object.keys(DEFAULT_ALERT_CONFIG).forEach(function(key) {
+    var value = candidate && Number(candidate[key]);
+    if (Number.isFinite(value)) config[key] = value;
+  });
+  config.riskDropPct = -Math.abs(config.riskDropPct);
+  config.shareMovePp = Math.abs(config.shareMovePp);
+  config.watchGrowthPct = Math.abs(config.watchGrowthPct);
+  config.watchShareMovePp = Math.abs(config.watchShareMovePp);
+  return config;
+}
+
+function loadAlertConfig() {
+  try {
+    return normalizeAlertConfig(JSON.parse(localStorage.getItem(ALERT_CONFIG_KEY) || '{}'));
+  } catch(e) {
+    return normalizeAlertConfig({});
+  }
+}
+
+function saveAlertConfig() {
+  alertConfig = normalizeAlertConfig(alertConfig);
+  try { localStorage.setItem(ALERT_CONFIG_KEY, JSON.stringify(alertConfig)); } catch(e) {}
+}
+
+function setAlertThreshold(kind, value) {
+  var parsed = Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  var map = {
+    growth: { key: 'growthSurgePct', label: 'Growth surge', value: Math.abs(parsed), suffix: '%' },
+    surge: { key: 'growthSurgePct', label: 'Growth surge', value: Math.abs(parsed), suffix: '%' },
+    risk: { key: 'riskDropPct', label: 'Risk drop', value: -Math.abs(parsed), suffix: '%' },
+    drop: { key: 'riskDropPct', label: 'Risk drop', value: -Math.abs(parsed), suffix: '%' },
+    share: { key: 'shareMovePp', label: 'Share move', value: Math.abs(parsed), suffix: 'pp' },
+    watch: { key: 'watchGrowthPct', label: 'Watch growth', value: Math.abs(parsed), suffix: '%' },
+  };
+  var target = map[kind];
+  if (!target) return null;
+  alertConfig[target.key] = target.value;
+  saveAlertConfig();
+  renderWatchlistMonitor();
+  return target;
+}
+
+function formatAlertConfigHtml() {
+  return '<strong class="c-amb">Alert Configuration</strong><br>' +
+    'Growth surge: ' + escapeHtml(alertConfig.growthSurgePct) + '%<br>' +
+    'Risk drop: ' + escapeHtml(alertConfig.riskDropPct) + '%<br>' +
+    'Share move: ±' + escapeHtml(alertConfig.shareMovePp) + 'pp<br>' +
+    'Watch growth: ' + escapeHtml(alertConfig.watchGrowthPct) + '%<br>' +
+    'Watch share move: ±' + escapeHtml(alertConfig.watchShareMovePp) + 'pp<br>' +
+    '<span class="c-gry">Commands: set alert growth 12, set alert risk 8, set alert share 0.75, reset alerts.</span>';
+}
+
+function showChatAlertConfig() {
+  chatSay(formatAlertConfigHtml(), false);
+}
+
+function loadCommandHistory() {
+  try {
+    var parsed = JSON.parse(localStorage.getItem(COMMAND_HISTORY_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.filter(function(item) { return typeof item === 'string' && item.trim(); }).slice(0, 30) : [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function saveCommandHistory() {
+  try { localStorage.setItem(COMMAND_HISTORY_KEY, JSON.stringify(commandHistory.slice(0, 30))); } catch(e) {}
+}
+
+function rememberCommand(raw) {
+  var command = String(raw || '').trim();
+  if (!command) return;
+  commandHistory = commandHistory.filter(function(item) { return item !== command; });
+  commandHistory.unshift(command);
+  commandHistory = commandHistory.slice(0, 30);
+  commandHistoryIndex = -1;
+  saveCommandHistory();
+}
+
+function recallCommandHistory(direction, input) {
+  if (!input || !commandHistory.length) return false;
+  if (direction < 0) {
+    commandHistoryIndex = Math.min(commandHistoryIndex + 1, commandHistory.length - 1);
+  } else {
+    commandHistoryIndex = Math.max(commandHistoryIndex - 1, -1);
+  }
+  input.value = commandHistoryIndex === -1 ? '' : commandHistory[commandHistoryIndex];
+  input.setSelectionRange(input.value.length, input.value.length);
+  return true;
+}
+
+function showCommandPalette() {
+  var html = '<strong class="c-amb">COMMANDS</strong><br>' +
+    '<span class="c-gry">Press Ctrl+K to focus this line. Use ArrowUp / ArrowDown for command history.</span><br>';
+  COMMAND_REGISTRY.forEach(function(cmd) {
+    html += '<div class="command-row"><span class="command-code">' + escapeHtml(cmd.code) + '</span><span>' + escapeHtml(cmd.label) + '</span></div>';
+  });
+  if (commandHistory.length) {
+    html += '<br><strong class="c-amb">RECENT</strong><br>';
+    commandHistory.slice(0, 5).forEach(function(item) {
+      html += '<span class="command-code">' + escapeHtml(item) + '</span> ';
+    });
+  }
+  chatSay(html, false);
+}
+
+function runMnemonicCommand(raw) {
+  var text = String(raw || '').trim();
+  var upper = text.toUpperCase();
+  if (upper === 'HELP' || upper === 'COMMANDS' || upper === 'CMDS') { showCommandPalette(); return true; }
+  if (upper === 'MKT' || upper === 'MARKET') { switchView('overview'); showChatMarketOverview(); return true; }
+  if (upper === 'TOPLIFE') { selectedMonth = null; switchView('life'); showChatTopCompanies('top 5 life'); return true; }
+  if (upper === 'TOPNL' || upper === 'TOPNONLIFE') { selectedMonth = null; switchView('nonlife'); showChatTopCompanies('top 5 non life'); return true; }
+  if (upper === 'TOPALL') { switchView('overview'); showChatTopCompanies('top 5'); return true; }
+  if (upper === 'WLIST' || upper === 'WATCH') { showChatWatchlist(); return true; }
+  if (upper === 'ALERTS') { showChatAlertConfig(); return true; }
+  if (upper === 'AUDIT' || upper === 'SOURCES') { showAudit(); return true; }
+  if (upper === 'EXPORTAUDIT') {
+    try { exportAuditPack(); } catch(e) { chatSay('Could not export the audit pack.', false); }
+    return true;
+  }
+  if (upper.indexOf('FIND ') === 0) {
+    var q = text.slice(5).trim();
+    if (q) {
+      applySearchFilter(q);
+      chatSay('Table filtered for <strong>' + escapeHtml(q) + '</strong>. Type <strong>clear</strong> to reset.', false);
+    }
+    return true;
+  }
+  if (upper.indexOf('VIEW ') === 0) {
+    var loadedPreset = applySavedViewPreset(text.slice(5).trim());
+    if (loadedPreset) chatSay('Loaded view <strong>' + escapeHtml(loadedPreset.name) + '</strong>.', false);
+    else chatSay('No saved view named <strong>' + escapeHtml(text.slice(5).trim()) + '</strong>. Type <strong>views</strong> to list presets.', false);
+    return true;
+  }
+  if (upper.indexOf('COMPARE ') === 0) {
+    var compareText = text.slice(8).trim();
+    var compareMatch = compareText.match(/(.+?)\s+(?:vs|versus|and|,)\s+(.+)/i);
+    if (compareMatch) startCompanyComparison(compareMatch[1].trim(), compareMatch[2].trim());
+    else chatSay('Use <strong>COMPARE LIC VS HDFC Life</strong>.', false);
+    return true;
+  }
+  return false;
+}
+
+function isWatched(name) {
+  return watchlist.indexOf(name) !== -1;
+}
+
+function toggleWatchlist(name) {
+  if (!name) return false;
+  var idx = watchlist.indexOf(name);
+  if (idx === -1) watchlist.push(name);
+  else watchlist.splice(idx, 1);
+  saveWatchlist();
+  if (table) table.redraw(true);
+  renderWatchlistMonitor();
+  return isWatched(name);
+}
+
+function findLatestCompanyRow(name) {
+  if (!DATA || !name) return null;
+  var latestLife = getLatestSegmentMonth('life');
+  var latestNonLife = getLatestSegmentMonth('non_life');
+  var pools = [
+    { key: 'life', label: 'Life', month: latestLife },
+    { key: 'non_life', label: 'Non-Life', month: latestNonLife },
+  ];
+  for (var p = 0; p < pools.length; p++) {
+    var pool = pools[p];
+    if (!pool.month) continue;
+    var enriched = enrichInsurers(pool.month.insurers, pool.key, pool.month.month);
+    for (var i = 0; i < enriched.length; i++) {
+      if (enriched[i].name === name) {
+        return Object.assign({}, enriched[i], { _seg: pool.label, seg: pool.label, _month: pool.month.month });
+      }
+    }
+  }
+  return null;
+}
+
+function getWatchlistAlerts() {
+  if (!DATA || !watchlist.length) return [];
+  var scope = getActiveAnalysisScope();
+  var inScopeByName = {};
+  scope.rows.forEach(function(row) { inScopeByName[row.name] = row; });
+  var config = normalizeAlertConfig(alertConfig);
+
+  return watchlist.map(function(name) {
+    var row = inScopeByName[name] || findLatestCompanyRow(name);
+    if (!row) return null;
+    var growth = row.yoy_growth_pct;
+    var shareMove = row.share_chg_pp;
+    var severity = 'neutral';
+    var reason = 'steady';
+    if (growth <= config.riskDropPct || shareMove <= -config.shareMovePp) {
+      severity = 'risk';
+      reason = growth <= config.riskDropPct ? 'YoY contraction' : 'share loss';
+    } else if (growth >= config.growthSurgePct || shareMove >= config.shareMovePp) {
+      severity = 'surge';
+      reason = growth >= config.growthSurgePct ? 'growth surge' : 'share gain';
+    } else if (growth >= config.watchGrowthPct || shareMove >= config.watchShareMovePp || growth <= -(config.watchGrowthPct / 2) || shareMove <= -config.watchShareMovePp) {
+      severity = 'watch';
+      reason = growth < 0 || shareMove < 0 ? 'softening' : 'momentum';
+    }
+    return Object.assign({}, row, { _alertSeverity: severity, _alertReason: reason });
+  }).filter(Boolean).sort(function(a, b) {
+    var rank = { risk: 0, surge: 1, watch: 2, neutral: 3 };
+    return rank[a._alertSeverity] - rank[b._alertSeverity] || Math.abs(b.yoy_growth_pct || 0) - Math.abs(a.yoy_growth_pct || 0);
+  });
+}
+
+function renderWatchlistMonitorHtml() {
+  var alerts = getWatchlistAlerts();
+  var count = watchlist.length;
+  var body = '';
+  if (!count) {
+    body = '<div class="watchlist-empty">No saved insurers. Use the star column or type "watch LIC".</div>';
+  } else if (!alerts.length) {
+    body = '<div class="watchlist-empty">' + count + ' saved insurer' + (count === 1 ? '' : 's') + ', but none are visible in the loaded data.</div>';
+  } else {
+    body = alerts.slice(0, 6).map(function(row) {
+      var cls = row._alertSeverity;
+      var segColor = row._seg === 'Life' ? 'var(--green)' : 'var(--cyan)';
+      return '<div class="watchlist-alert ' + cls + '">' +
+        '<span class="watchlist-name">' + escapeHtml(shortName(row.name)) + '</span>' +
+        '<span style="color:' + segColor + '">' + escapeHtml(row._seg || row.seg || '--') + '</span>' +
+        '<span>' + fmtCr(row.premium_cr) + '</span>' +
+        '<span class="' + ((row.yoy_growth_pct || 0) >= 0 ? 'up' : 'dn') + '">' + fmtPct(row.yoy_growth_pct) + '</span>' +
+        '<span>' + escapeHtml(row._alertReason) + '</span>' +
+      '</div>';
+    }).join('');
+  }
+  return '<div class="insight-card watchlist-monitor" id="watchlistMonitor">' +
+    '<div class="label">Watchlist Monitor</div>' +
+    '<div class="value" style="color:var(--amber)">' + count + ' saved</div>' +
+    '<div class="desc">Local monitor · risk ≤ ' + escapeHtml(alertConfig.riskDropPct) + '% YoY, surge ≥ ' + escapeHtml(alertConfig.growthSurgePct) + '% YoY, share ±' + escapeHtml(alertConfig.shareMovePp) + 'pp</div>' +
+    '<div class="watchlist-alerts">' + body + '</div>' +
+  '</div>';
+}
+
+function renderWatchlistMonitor() {
+  var el = document.getElementById('watchlistMonitor');
+  if (el) el.outerHTML = renderWatchlistMonitorHtml();
+}
+
+function normalizeSavedViewName(name) {
+  return String(name || '').trim().replace(/\s+/g, ' ').toLowerCase().slice(0, 48);
+}
+
+function loadSavedViews() {
+  try {
+    var parsed = JSON.parse(localStorage.getItem(SAVED_VIEWS_KEY) || '{}');
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch(e) {
+    return {};
+  }
+}
+
+function saveSavedViews() {
+  try { localStorage.setItem(SAVED_VIEWS_KEY, JSON.stringify(savedViews)); } catch(e) {}
+}
+
+function syncPeriodButtons() {
+  document.querySelectorAll('.period-btn').forEach(function(el) {
+    el.style.borderColor = el.dataset.period === chartPeriod ? 'var(--amber)' : 'var(--border2)';
+  });
+}
+
+function captureSavedView(name) {
+  var key = normalizeSavedViewName(name);
+  if (!key) return null;
+  return {
+    version: 1,
+    name: key,
+    view: currentView,
+    selectedMonth: selectedMonth,
+    chartPeriod: chartPeriod,
+    watchlist: watchlist.slice(),
+    savedAt: new Date().toISOString(),
+  };
+}
+
+function saveCurrentViewPreset(name) {
+  var preset = captureSavedView(name);
+  if (!preset) return null;
+  savedViews[preset.name] = preset;
+  saveSavedViews();
+  return preset;
+}
+
+function getSavedViewPreset(name) {
+  return savedViews[normalizeSavedViewName(name)] || null;
+}
+
+function applySavedViewPreset(name) {
+  var preset = getSavedViewPreset(name);
+  if (!preset) return null;
+  if (Array.isArray(preset.watchlist)) {
+    watchlist = preset.watchlist.filter(function(item) { return typeof item === 'string' && item.trim(); });
+    saveWatchlist();
+  }
+  chartPeriod = preset.chartPeriod || 'all';
+  if (preset.view) {
+    viewMonthSelection[preset.view] = preset.selectedMonth || null;
+    selectedMonth = preset.selectedMonth || null;
+    switchView(preset.view);
+  }
+  syncPeriodButtons();
+  renderWatchlistMonitor();
+  return preset;
+}
+
+function deleteSavedViewPreset(name) {
+  var key = normalizeSavedViewName(name);
+  if (!savedViews[key]) return false;
+  delete savedViews[key];
+  saveSavedViews();
+  return true;
+}
+
+function formatSavedViewLine(preset) {
+  return '<strong>' + escapeHtml(preset.name) + '</strong> — ' +
+    escapeHtml(preset.view || '--') + ', ' +
+    escapeHtml(preset.selectedMonth || 'latest') + ', ' +
+    escapeHtml((preset.watchlist || []).length + ' watched');
 }
 
 function getActiveAnalysisScope() {
@@ -374,6 +751,7 @@ Promise.all([
 
 // ─── Init ───────────────────────────────────────────────────────────
 function init() {
+  loadTheme();
   document.body.classList.remove('loading');
   updateClock();
   setInterval(updateClock, 1000);
@@ -386,6 +764,21 @@ function init() {
   setupKeys();
   setupChat();
   setupStatus();
+}
+
+// ─── Theme ──────────────────────────────────────────────────────────
+function loadTheme() {
+  try {
+    var saved = localStorage.getItem('irdai_theme');
+    if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch(e) {}
+}
+function toggleTheme() {
+  var html = document.documentElement;
+  var current = html.getAttribute('data-theme') || 'dark';
+  var next = current === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  try { localStorage.setItem('irdai_theme', next); } catch(e) {}
 }
 
 // ─── Clock ──────────────────────────────────────────────────────────
@@ -411,6 +804,48 @@ function getNonLifeLatest() { return getLatestSegmentMonth('non_life'); }
 function getLifeData(month) { return getMonthData('life', month); }
 function getNonLifeData(month) { return getMonthData('non_life', month); }
 
+// ─── Demo Playback ─────────────────────────────────────────────────
+function getAvailableMonths() {
+  var set = {};
+  ['life', 'non_life'].forEach(function(k) {
+    (DATA[k] ? DATA[k].monthly_data : []).forEach(function(m) { set[m.month] = true; });
+  });
+  return Object.keys(set).sort();
+}
+
+function updateStatusForDemo() {
+  var el = document.getElementById('dataStatus');
+  if (el && demoMode) {
+    el.innerHTML = '· DEMO · ' + (selectedMonth || '');
+  }
+}
+
+function startDemoPlayback() {
+  if (demoMode) return;
+  var months = getAvailableMonths();
+  if (months.length < 2) { chatSay('Need at least 2 months for demo playback.', false); return; }
+  demoMode = true;
+  var idx = months.indexOf(selectedMonth);
+  if (idx === -1) idx = 0;
+  demoInterval = setInterval(function() {
+    idx = (idx + 1) % months.length;
+    selectedMonth = months[idx];
+    renderView(currentView);
+    updateStatusForDemo();
+  }, 3000);
+  chatSay('Demo playback started. Auto-stepping through <strong>' + months.length + '</strong> months. Type <strong>stop demo</strong> to end.', false);
+  updateStatusForDemo();
+}
+
+function stopDemoPlayback() {
+  if (!demoMode) return;
+  demoMode = false;
+  if (demoInterval) { clearInterval(demoInterval); demoInterval = null; }
+  var el = document.getElementById('dataStatus');
+  if (el) updateDataStatus();
+  chatSay('Demo playback stopped.', false);
+}
+
 // ─── Export ─────────────────────────────────────────────────────────
 function exportCSV() {
   if (!table) return;
@@ -432,6 +867,164 @@ function exportCSV() {
   a.click();
   URL.revokeObjectURL(a.href);
   chatSay('Exported <strong>' + rows.length + '</strong> rows as CSV.', false);
+}
+
+function downloadTextFile(filename, text, mimeType) {
+  var blob = new Blob([text], { type: mimeType || 'text/plain' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function generateAuditPack() {
+  if (!DATA || !DATA._meta) return '# IRDAI Insurance Terminal Audit Pack\n\nData is not loaded.\n';
+  var meta = DATA._meta;
+  var validation = meta.validation || { status: 'unvalidated', issues: [] };
+  var issues = validation.issues || [];
+  var hygiene = meta.source_hygiene || {};
+  var scope = getActiveAnalysisScope();
+  var counts = issues.reduce(function(acc, issue) {
+    acc[issue.severity] = (acc[issue.severity] || 0) + 1;
+    return acc;
+  }, {});
+  var alerts = getWatchlistAlerts();
+  var stocksCount = STOCKS && STOCKS.prices ? Object.keys(STOCKS.prices).length : 0;
+  var lines = [
+    '# IRDAI Insurance Terminal Audit Pack',
+    '',
+    'Generated At: ' + new Date().toISOString(),
+    'Research As Of: ' + (meta.research_as_of || meta.last_updated || '--'),
+    'Active View: ' + currentView,
+    'Active Period: ' + (scope.period || '--'),
+    'Validation Status: ' + String(validation.status || 'unvalidated').toUpperCase(),
+    'Validation Counts: ' + (counts.error || 0) + ' errors, ' + (counts.warning || 0) + ' warnings, ' + (counts.info || 0) + ' info',
+    'Latest Life Month: ' + (meta.latest_life_month || '--'),
+    'Latest Non-Life Month: ' + (meta.latest_non_life_month || '--'),
+    'Latest Shared Month: ' + (meta.latest_shared_month || '--'),
+    'NSE Stock Snapshots: ' + stocksCount,
+    '',
+    '## Source Hygiene',
+    '- Raw files processed: ' + (hygiene.raw_files_processed == null ? '--' : hygiene.raw_files_processed),
+    '- Records loaded: ' + (hygiene.records_loaded == null ? '--' : hygiene.records_loaded),
+    '- Records retained: ' + (hygiene.records_retained == null ? '--' : hygiene.records_retained),
+    '- Dropped duplicates: ' + (hygiene.records_dropped == null ? '--' : hygiene.records_dropped),
+    '- Filename/header mismatches: ' + ((hygiene.filename_header_mismatches || []).length),
+  ];
+
+  (hygiene.duplicate_resolutions || []).forEach(function(item) {
+    lines.push('- Duplicate ' + item.segment + ' ' + item.month + ': kept ' + item.kept_source_file + ', dropped ' + item.dropped_source_file + ' (' + item.reason + ')');
+  });
+  (hygiene.filename_header_mismatches || []).forEach(function(item) {
+    lines.push('- Month mismatch: ' + item.source_file + ' filename ' + item.filename_month + ', header ' + item.header_month + ', selected ' + item.selected_month);
+  });
+
+  lines.push('', '## Primary Sources');
+  (meta.source_links || []).forEach(function(src) {
+    lines.push('- ' + src.name + ': ' + (src.latest_observed || src.url));
+  });
+
+  lines.push('', '## Validation Items');
+  if (!issues.length) {
+    lines.push('- No validation issues tracked.');
+  } else {
+    issues.slice(0, 25).forEach(function(issue) {
+      lines.push('- [' + String(issue.severity || '').toUpperCase() + '] ' + issue.code + ': ' + issue.message);
+    });
+  }
+
+  lines.push('', '## Watchlist Monitor');
+  if (!watchlist.length) {
+    lines.push('- No watched insurers saved locally.');
+  } else if (!alerts.length) {
+    lines.push('- ' + watchlist.length + ' watched insurer' + (watchlist.length === 1 ? '' : 's') + ', but no matching loaded data.');
+  } else {
+    alerts.forEach(function(row) {
+      lines.push('- ' + row.name + ' | ' + (row._seg || row.seg || '--') + ' | ' + fmtCr(row.premium_cr) + ' | YoY ' + fmtPct(row.yoy_growth_pct) + ' | ' + row._alertSeverity.toUpperCase() + ' - ' + row._alertReason);
+    });
+  }
+
+  lines.push('', '## Alert Configuration');
+  lines.push('- Growth surge: ' + alertConfig.growthSurgePct + '%');
+  lines.push('- Risk drop: ' + alertConfig.riskDropPct + '%');
+  lines.push('- Share move: ±' + alertConfig.shareMovePp + 'pp');
+  lines.push('- Watch growth: ' + alertConfig.watchGrowthPct + '%');
+  lines.push('- Watch share move: ±' + alertConfig.watchShareMovePp + 'pp');
+
+  lines.push('', '## Saved View Presets');
+  var savedViewKeys = Object.keys(savedViews).sort();
+  if (!savedViewKeys.length) {
+    lines.push('- No saved views stored locally.');
+  } else {
+    savedViewKeys.forEach(function(key) {
+      var preset = savedViews[key];
+      lines.push('- ' + preset.name + ' | ' + (preset.view || '--') + ' | ' + (preset.selectedMonth || 'latest') + ' | ' + ((preset.watchlist || []).length) + ' watched | saved ' + (preset.savedAt || '--'));
+    });
+  }
+
+  lines.push('', '## Active Scope');
+  scope.segments.forEach(function(segment) {
+    lines.push('- ' + segment.label + ' ' + segment.month + ': ' + fmtCr(segment.total_premium_cr) + ', YoY ' + fmtPct(segment.total_growth_pct) + ', source ' + (segment.source_file || '--'));
+  });
+
+  lines.push('', '## Caveats');
+  lines.push('- Figures are provisional and unaudited where source flash reports say so.');
+  lines.push('- Cumulative YTD series reset at fiscal-year boundaries.');
+  lines.push('- Watchlist selections are local browser state and are not uploaded.');
+
+  return lines.join('\n') + '\n';
+}
+
+function exportAuditPack() {
+  var datePart = (DATA && DATA._meta && (DATA._meta.research_as_of || DATA._meta.last_updated)) || new Date().toISOString().slice(0, 10);
+  downloadTextFile('irdai-audit-pack-' + datePart + '.md', generateAuditPack(), 'text/markdown');
+  chatSay('Exported <strong>audit pack</strong> as Markdown.', false);
+}
+
+// ─── AI Insight ─────────────────────────────────────────────────────
+function generateOverviewAISummary(life, nonlife, total) {
+  var lifeGrowth = life.total_growth_pct;
+  var nonlifeGrowth = nonlife.total_growth_pct;
+  var sortedLife = sortByPremium(life.insurers);
+  var sortedNonLife = sortByPremium(nonlife.insurers);
+  var topLife = sortedLife[0];
+  var topNonLife = sortedNonLife[0];
+  if (!topLife || !topNonLife) return '';
+  var lifeShare = Math.round(life.total_premium_cr / total * 100);
+  var nonlifeShare = Math.round(nonlife.total_premium_cr / total * 100);
+  var growing = lifeGrowth > 0 && nonlifeGrowth > 0;
+  var text = 'The combined market stands at <strong>' + fmtCr(total) + '</strong>, with Life Insurance holding ' + lifeShare + '% share and Non-Life at ' + nonlifeShare + '%. ';
+  text += 'Life is growing at <strong>' + fmtPct(lifeGrowth) + '</strong> YoY, while Non-Life is at <strong>' + fmtPct(nonlifeGrowth) + '</strong>. ';
+  text += 'The top Life player is <strong>' + shortName(topLife.name) + '</strong> at ' + topLife.market_share_pct.toFixed(1) + '% share, and in Non-Life, <strong>' + shortName(topNonLife.name) + '</strong> leads at ' + topNonLife.market_share_pct.toFixed(1) + '%.';
+  return '<div class="insight-card" style="margin-top:6px;"><div class="label">AI INSIGHT</div><div class="desc" style="font-size:9px;margin-top:2px;line-height:1.6;color:var(--gray)">' + text + '</div></div>';
+}
+
+function generateSegmentAISummary(latest, segment) {
+  var color = segment === 'life' ? 'var(--green)' : 'var(--cyan)';
+  var segLabel = segmentDisplayLabel(segment);
+  var sorted = sortByPremium(latest.insurers);
+  var total = latest.insurers.reduce(function(s, i) { return s + i.premium_cr; }, 0);
+  var top = sorted[0];
+  if (!top) return '';
+  var top3Share = sorted.slice(0, 3).reduce(function(s, i) { return s + i.market_share_pct; }, 0);
+  var growthLeaders = latest.insurers.filter(function(i) { return i.yoy_growth_pct > 10 && i.premium_cr >= 100; }).length;
+  var text = 'The ' + segLabel + ' segment aggregates <strong>' + fmtCr(latest.total_premium_cr) + '</strong> in premiums, growing at <strong>' + fmtPct(latest.total_growth_pct) + '</strong> YoY. ';
+  text += 'The top 3 insurers control ' + top3Share.toFixed(1) + '% of the market, with <strong>' + shortName(top.name) + '</strong> leading at ' + top.market_share_pct.toFixed(1) + '% share. ';
+  if (growthLeaders > 0) text += 'There are ' + growthLeaders + ' insurers growing faster than 10% YoY with a meaningful premium base.';
+  else text += 'No insurers are growing faster than 10% YoY with a meaningful premium base.';
+  return '<div class="insight-card" style="margin-top:6px;"><div class="label">AI INSIGHT</div><div class="desc" style="font-size:9px;margin-top:2px;line-height:1.6;color:var(--gray)">' + text + '</div></div>';
+}
+
+function generateCompareAISummary(life, nonlife) {
+  var total = life.total_premium_cr + nonlife.total_premium_cr;
+  var lifeShare = Math.round(life.total_premium_cr / total * 100);
+  var nonlifeShare = Math.round(nonlife.total_premium_cr / total * 100);
+  var gap = Math.abs(life.total_premium_cr - nonlife.total_premium_cr);
+  var leader = life.total_premium_cr > nonlife.total_premium_cr ? 'Life' : 'Non-Life';
+  var text = leader + ' leads the market with a premium gap of <strong>' + fmtCr(gap) + '</strong>. ';
+  text += 'Life holds ' + lifeShare + '% of the combined market (growing at ' + fmtPct(life.total_growth_pct) + '), while Non-Life holds ' + nonlifeShare + '% (growing at ' + fmtPct(nonlife.total_growth_pct) + '). ';
+  return '<div class="insight-card" style="margin-top:6px;"><div class="label">AI INSIGHT</div><div class="desc" style="font-size:9px;margin-top:2px;line-height:1.6;color:var(--gray)">' + text + '</div></div>';
 }
 
 // ─── Ticker ─────────────────────────────────────────────────────────
@@ -578,11 +1171,23 @@ function setupNav() {
       updateChart();
     });
   });
+  var themeBtn = document.getElementById('themeToggle');
+  if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
 }
 
 function setupKeys() {
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') { closePopup(); return; }
+    if (e.ctrlKey && e.key.toLowerCase() === 'k' || e.metaKey && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      var cmdInput = document.getElementById('chatInput');
+      if (cmdInput) {
+        cmdInput.focus();
+        cmdInput.select();
+      }
+      showCommandPalette();
+      return;
+    }
     if (e.key === 'r' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); refreshData(); return; }
     var tag = e.target && e.target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
@@ -654,12 +1259,18 @@ function setupChat() {
     var raw = input.value.trim();
     if (!raw) return;
     input.value = '';
+    rememberCommand(raw);
     chatSay(escapeHtml(raw), true);
     processChatInput(raw);
   }
 
   input.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') submit();
+    else if (e.key === 'ArrowUp') {
+      if (recallCommandHistory(-1, input)) e.preventDefault();
+    } else if (e.key === 'ArrowDown') {
+      if (recallCommandHistory(1, input)) e.preventDefault();
+    }
   });
   sendBtn.addEventListener('click', submit);
   if (clearBtn) clearBtn.addEventListener('click', clearChat);
@@ -669,6 +1280,8 @@ function processChatInput(raw) {
   var text = raw.trim();
   var lower = text.toLowerCase();
 
+  if (runMnemonicCommand(text)) return;
+
   if (lower === 'help' || lower === '?' || lower === 'what can you do' || lower === 'what can you do?') {
     showChatHelp(); return;
   }
@@ -677,6 +1290,12 @@ function processChatInput(raw) {
     else if (table) { table.clearFilter(true); chatSay('Table filter cleared.', false); }
     else chatSay('Nothing to clear.', false);
     return;
+  }
+  if (lower === 'demo' || lower === 'start demo' || lower === 'play' || lower === 'playback') {
+    startDemoPlayback(); return;
+  }
+  if (lower === 'stop demo' || lower === 'pause' || lower === 'stop playback') {
+    stopDemoPlayback(); return;
   }
   if (lower === 'overview' || lower === 'show overview' || lower === 'go to overview' || lower === 'home' || lower === 'main') {
     switchView('overview'); chatSay('Switched to <strong>Market Overview</strong>.', false); return;
@@ -691,6 +1310,10 @@ function processChatInput(raw) {
     switchView('compare'); chatSay('Switched to <strong>Life vs Non-Life</strong> segment comparison.', false); return;
   }
 
+  if (lower === 'export audit' || lower === 'audit pack' || lower === 'download audit' || lower === 'export audit pack') {
+    try { exportAuditPack(); } catch(e) { chatSay('Could not export the audit pack.', false); }
+    return;
+  }
   if (lower === 'export' || lower === 'download' || lower === 'csv' || lower === 'export csv') {
     try { exportCSV(); chatSay('CSV exported! Check your downloads.', false); } catch(e) { chatSay('Could not export CSV. Make sure a table is visible.', false); }
     return;
@@ -705,6 +1328,60 @@ function processChatInput(raw) {
   }
   if (lower === 'splash' || lower === 'market overview' || lower === 'summary') {
     showSplash(); return;
+  }
+  if (lower === 'watchlist' || lower === 'show watchlist' || lower === 'monitor' || lower === 'watchlist monitor') {
+    showChatWatchlist(); return;
+  }
+  if (lower === 'alert config' || lower === 'alerts' || lower === 'alert thresholds') {
+    showChatAlertConfig(); return;
+  }
+  if (lower === 'reset alerts' || lower === 'reset alert config') {
+    alertConfig = normalizeAlertConfig(DEFAULT_ALERT_CONFIG);
+    saveAlertConfig();
+    renderWatchlistMonitor();
+    showChatAlertConfig();
+    return;
+  }
+  var setAlertMatch = lower.match(/^set alert\s+(growth|surge|risk|drop|share|watch)\s+(-?\d+(?:\.\d+)?)$/);
+  if (setAlertMatch) {
+    var updatedAlert = setAlertThreshold(setAlertMatch[1], setAlertMatch[2]);
+    if (updatedAlert) {
+      chatSay('Updated <strong>' + escapeHtml(updatedAlert.label) + '</strong> to <strong>' + escapeHtml(updatedAlert.value) + updatedAlert.suffix + '</strong>. Type <strong>alert config</strong> to review thresholds.', false);
+    } else {
+      chatSay('Use a numeric alert value, for example <strong>set alert growth 12</strong>.', false);
+    }
+    return;
+  }
+  if (lower === 'views' || lower === 'saved views' || lower === 'show saved views') {
+    showChatSavedViews(); return;
+  }
+  var saveViewMatch = lower.match(/^save view\s+(.+)/);
+  if (saveViewMatch) {
+    var savedPreset = saveCurrentViewPreset(saveViewMatch[1]);
+    if (savedPreset) chatSay('Saved view <strong>' + escapeHtml(savedPreset.name) + '</strong>. Type <strong>load view ' + escapeHtml(savedPreset.name) + '</strong> to restore it.', false);
+    else chatSay('Give the view a name, for example <strong>save view nonlife desk</strong>.', false);
+    return;
+  }
+  var loadViewMatch = lower.match(/^(?:load|open|restore) view\s+(.+)/);
+  if (loadViewMatch) {
+    var loadedPreset = applySavedViewPreset(loadViewMatch[1]);
+    if (loadedPreset) chatSay('Loaded view <strong>' + escapeHtml(loadedPreset.name) + '</strong>.', false);
+    else chatSay('No saved view named <strong>' + escapeHtml(loadViewMatch[1]) + '</strong>. Type <strong>views</strong> to list presets.', false);
+    return;
+  }
+  var deleteViewMatch = lower.match(/^delete view\s+(.+)/);
+  if (deleteViewMatch) {
+    if (deleteSavedViewPreset(deleteViewMatch[1])) chatSay('Deleted saved view <strong>' + escapeHtml(normalizeSavedViewName(deleteViewMatch[1])) + '</strong>.', false);
+    else chatSay('No saved view named <strong>' + escapeHtml(deleteViewMatch[1]) + '</strong>.', false);
+    return;
+  }
+  var unwatchMatch = lower.match(/^(?:unwatch|remove from watchlist|remove)\s+(.+)/);
+  if (unwatchMatch) {
+    setChatWatchlistCompany(unwatchMatch[1].trim(), false); return;
+  }
+  var watchMatch = lower.match(/^(?:watch|add watch|add to watchlist)\s+(.+)/);
+  if (watchMatch) {
+    setChatWatchlistCompany(watchMatch[1].trim(), true); return;
   }
   if (lower === 'fit' || lower === 'reset chart' || lower === 'fit chart') {
     fitChart(); chatSay('Chart zoom reset.', false); return;
@@ -790,11 +1467,73 @@ function showChatHelp() {
     '<strong>Compare</strong> — "Compare LIC vs HDFC Life", "Compare ICICI Lombard, New India"<br>' +
     '<strong>Market</strong> — "What\'s the total market premium?", "Show me penetration", "Market size"<br>' +
     '<strong>Top lists</strong> — "Who are the top life insurers?", "Largest non-life companies"<br>' +
+    '<strong>Watchlist</strong> — "Watch LIC", "Unwatch LIC", "Watchlist"<br>' +
+    '<strong>Alerts</strong> — "Alert config", "Set alert growth 12", "Set alert share 0.75"<br>' +
+    '<strong>Saved views</strong> — "Save view nonlife desk", "Load view nonlife desk", "Views"<br>' +
     '<strong>Views</strong> — "Show overview", "Go to life", "Non-life view", "Compare segments"<br>' +
-    '<strong>Data</strong> — "Export", "Export PDF", "Refresh", "Audit"<br>' +
+    '<strong>Data</strong> — "Export", "Export PDF", "Export audit", "Refresh", "Audit"<br>' +
     '<strong>Search</strong> — "Find Star Health", "Search ICICI"<br>' +
     '<strong>Stocks</strong> — "What\'s the NSE price of LIC?", "Stock of ICICI Prudential"<br>' +
+    '<strong>Demo</strong> — "Demo" to start auto-playback, "Stop demo" to end<br>' +
     '<strong>Exit</strong> — "Exit comparison", "Clear search"', false);
+}
+
+function showChatSavedViews() {
+  var keys = Object.keys(savedViews).sort();
+  if (!keys.length) {
+    chatSay('No saved views yet. Try <strong>save view nonlife desk</strong>.', false);
+    return;
+  }
+  var html = '<strong class="c-amb">Saved Views</strong><br>';
+  keys.forEach(function(key, idx) {
+    html += (idx + 1) + '. ' + formatSavedViewLine(savedViews[key]) + '<br>';
+  });
+  chatSay(html, false);
+}
+
+function setChatWatchlistCompany(query, shouldWatch) {
+  var resolved = resolveCompanyName(query);
+  if (!resolved) {
+    chatSay('I couldn\'t find <strong>' + escapeHtml(query) + '</strong> for the watchlist.', false);
+    return;
+  }
+  var alreadyWatched = isWatched(resolved.name);
+  if (shouldWatch && !alreadyWatched) {
+    watchlist.push(resolved.name);
+    saveWatchlist();
+  } else if (!shouldWatch && alreadyWatched) {
+    watchlist.splice(watchlist.indexOf(resolved.name), 1);
+    saveWatchlist();
+  }
+  if (table) table.redraw(true);
+  renderWatchlistMonitor();
+  chatSay(
+    '<strong>' + escapeHtml(shortName(resolved.name)) + '</strong> ' +
+    (shouldWatch ? 'is on the watchlist.' : 'is off the watchlist.') +
+    ' Type <strong>watchlist</strong> to review monitored alerts.',
+    false
+  );
+}
+
+function showChatWatchlist() {
+  if (!watchlist.length) {
+    chatSay('Watchlist is empty. Type <strong>watch LIC</strong> or use the star column beside a company.', false);
+    return;
+  }
+  var alerts = getWatchlistAlerts();
+  var html = '<strong class="c-amb">Watchlist Monitor</strong><br>';
+  if (!alerts.length) {
+    html += '<span class="c-gry">' + watchlist.length + ' saved insurer' + (watchlist.length === 1 ? '' : 's') + ', but none are available in loaded periods.</span>';
+  } else {
+    alerts.forEach(function(row, idx) {
+      var cls = row._alertSeverity === 'risk' ? 'c-red' : (row._alertSeverity === 'surge' ? 'c-grn' : 'c-gry');
+      html += (idx + 1) + '. <strong>' + escapeHtml(shortName(row.name)) + '</strong> ' +
+        '<span class="c-gry">' + escapeHtml(row._seg || row.seg || '') + '</span> — ' +
+        fmtCr(row.premium_cr) + ', <span class="' + cls + '">' + fmtPct(row.yoy_growth_pct) + '</span> ' +
+        '<span class="c-gry">(' + escapeHtml(row._alertReason) + ')</span><br>';
+    });
+  }
+  chatSay(html, false);
 }
 
 function showChatCompanyProfile(query) {
@@ -853,9 +1592,9 @@ function showChatTopCompanies(lower) {
     var m = getMonthData(seg, null);
     if (!m) { chatSay('No data available for this segment.', false); return; }
     var sorted = sortByPremium(m.insurers).slice(0, count);
-    var label = seg === 'life' ? 'Life Insurance' : 'Non-Life Insurance';
+    var label = seg === 'life' ? 'Life Insurers' : 'Non-Life Insurers';
     var color = seg === 'life' ? 'c-grn' : 'c-cyn';
-    var html = '<strong class="' + color + '">Top ' + count + ' ' + label + ' Insurers</strong><br>';
+    var html = '<strong class="' + color + '">Top ' + label + '</strong> <span class="c-gry">(' + count + ')</span><br>';
     sorted.forEach(function(i, idx) {
       html += (idx + 1) + '. <strong>' + shortName(i.name) + '</strong> — ' + fmtCr(i.premium_cr) + ' (' + i.market_share_pct.toFixed(1) + '% share, <span class="' + (i.yoy_growth_pct >= 0 ? 'c-grn' : 'c-red') + '">' + fmtPct(i.yoy_growth_pct) + '</span>)<br>';
     });
@@ -1049,6 +1788,33 @@ function showAudit() {
       '<span>' + escapeHtml(src.latest_observed || src.url) + '</span>' +
     '</div>';
   }).join('');
+  var hygiene = meta.source_hygiene || {};
+  var duplicateResolutions = hygiene.duplicate_resolutions || [];
+  var monthMismatches = hygiene.filename_header_mismatches || [];
+  var hygieneRows = [
+    ['Raw files processed', hygiene.raw_files_processed],
+    ['Records loaded', hygiene.records_loaded],
+    ['Records retained', hygiene.records_retained],
+    ['Dropped duplicates', hygiene.records_dropped],
+    ['Filename/header mismatches', monthMismatches.length],
+  ].map(function(row) {
+    return '<div class="audit-row"><span>' + escapeHtml(row[0]) + '</span><span>' + escapeHtml(row[1] == null ? '--' : String(row[1])) + '</span></div>';
+  }).join('');
+  var duplicateHtml = duplicateResolutions.map(function(item) {
+    return '<div class="audit-note">Duplicate ' + escapeHtml(item.segment || '--') + ' month ' + escapeHtml(item.month || '--') +
+      ': kept ' + escapeHtml(item.kept_source_file || '--') +
+      ' and dropped ' + escapeHtml(item.dropped_source_file || '--') +
+      ' (' + escapeHtml(item.reason || 'deduplicated') + ')</div>';
+  }).join('');
+  var mismatchHtml = monthMismatches.map(function(item) {
+    return '<div class="audit-note">Month mismatch: ' + escapeHtml(item.source_file || '--') +
+      ' filename ' + escapeHtml(item.filename_month || '--') +
+      ', header ' + escapeHtml(item.header_month || '--') +
+      ', selected ' + escapeHtml(item.selected_month || '--') + '</div>';
+  }).join('');
+  var hygieneNoteHtml = (duplicateHtml || mismatchHtml)
+    ? duplicateHtml + mismatchHtml
+    : '<div class="audit-note">No duplicate or filename/header source exceptions detected.</div>';
   var issueHtml = issues.slice(0, 8).map(function(issue) {
     var color = issue.severity === 'error' ? 'var(--red)' : (issue.severity === 'warning' ? 'var(--amber)' : 'var(--gray2)');
     return '<div class="audit-issue">' +
@@ -1075,6 +1841,7 @@ function showAudit() {
     '<div class="audit-row"><span>Warnings</span><span style="color:var(--amber)">' + (counts.warning || 0) + '</span></div>' +
     '<div class="audit-row"><span>Info</span><span style="color:var(--gray2)">' + (counts.info || 0) + '</span></div>' +
     '<div class="section-label">PRIMARY SOURCES</div>' + sourceHtml +
+    '<div class="section-label">SOURCE HYGIENE</div>' + hygieneRows + hygieneNoteHtml +
     '<div class="section-label">TOP VALIDATION ITEMS</div>' + issueHtml +
     '<div class="section-label">EXTRACTION NOTES</div>' + notesHtml
   );
@@ -1147,8 +1914,8 @@ function renderOverview() {
   document.getElementById('tableTitle').textContent = 'ALL INSURERS';
   document.getElementById('tableMonth').textContent = pair.month + ' shared';
 
-  buildTable(combined, ['rank', 'name', 'segment', 'premium', 'share', 'growth', 'share_chg_pp', 'cagr_3m'],
-    { rank: { title: '#', width: 30 }, name: { title: 'Company', width: 200 }, segment: { title: 'Type', width: 60 }, premium: { title: 'Premium' }, share: { title: 'Shr%' }, growth: { title: 'YoY%' }, share_chg_pp: { title: 'ShrChg' }, cagr_3m: { title: '3M CAGR' } }
+  buildTable(combined, ['watch', 'rank', 'name', 'segment', 'premium', 'share', 'growth', 'share_chg_pp', 'cagr_3m'],
+    { watch: { title: '', width: 34 }, rank: { title: '#', width: 30 }, name: { title: 'Company', width: 200 }, segment: { title: 'Type', width: 60 }, premium: { title: 'Premium' }, share: { title: 'Shr%' }, growth: { title: 'YoY%' }, share_chg_pp: { title: 'ShrChg' }, cagr_3m: { title: '3M CAGR' } }
   );
 
   updateChartData('all');
@@ -1179,8 +1946,8 @@ function renderSegment(segment) {
 
   var enriched = enrichInsurers(latest.insurers, segKey, latest.month);
   var sorted = sortByPremium(enriched);
-  buildTable(sorted, ['rank', 'name', 'premium', 'share', 'growth', 'share_chg_pp', 'cagr_3m'],
-    { rank: { title: '#', width: 30 }, name: { title: 'Company', width: 220 }, premium: { title: 'Premium' }, share: { title: 'Shr%' }, growth: { title: 'YoY%' }, share_chg_pp: { title: 'ShrChg' }, cagr_3m: { title: '3M CAGR' } }
+  buildTable(sorted, ['watch', 'rank', 'name', 'premium', 'share', 'growth', 'share_chg_pp', 'cagr_3m'],
+    { watch: { title: '', width: 34 }, rank: { title: '#', width: 30 }, name: { title: 'Company', width: 220 }, premium: { title: 'Premium' }, share: { title: 'Shr%' }, growth: { title: 'YoY%' }, share_chg_pp: { title: 'ShrChg' }, cagr_3m: { title: '3M CAGR' } }
   );
 
   updateChartData(segKey);
@@ -1278,7 +2045,14 @@ function buildTable(data, columns, colDefs) {
     var formatter = 'plaintext';
     var field = FIELD_MAP[key] || key;
 
-    if (key === 'rank') {
+    if (key === 'watch') {
+      formatter = function(c) {
+        var d = c.getRow().getData();
+        var active = isWatched(d.name);
+        var title = (active ? 'Remove from watchlist: ' : 'Add to watchlist: ') + d.name;
+        return '<button type="button" class="watch-toggle' + (active ? ' active' : '') + '" title="' + escapeHtml(title) + '" aria-label="' + escapeHtml(title) + '">' + (active ? '\u2605' : '\u2606') + '</button>';
+      };
+    } else if (key === 'rank') {
       formatter = function(c) { return '<span style="color:var(--gray)">' + c.getValue() + '</span>'; };
     } else if (key === 'name') {
       formatter = function(c) { return '<span style="color:var(--cyan);font-weight:600">' + c.getValue() + '</span>'; };
@@ -1319,16 +2093,25 @@ function buildTable(data, columns, colDefs) {
       };
     }
 
-    return {
+    var columnDef = {
       title: def.title || key.toUpperCase(),
       field: field,
       width: def.width,
-      hozAlign: (key === 'rank' || key === 'name' || key === 'segment' || key === 'seg') ? 'left' : 'right',
+      hozAlign: key === 'watch' ? 'center' : ((key === 'rank' || key === 'name' || key === 'segment' || key === 'seg') ? 'left' : 'right'),
       headerFilter: key === 'name' ? 'input' : false,
       headerFilterPlaceholder: key === 'name' ? 'Search...' : '',
       formatter: formatter,
       sorter: (key === 'name' ? 'string' : (key === 'rank' || key === 'premium' || key === 'share' || key === 'growth' || key === 'share_chg_pp' || key === 'cagr_3m') ? 'number' : 'string'),
     };
+    if (key === 'watch') {
+      columnDef.headerSort = false;
+      columnDef.cellClick = function(e, cell) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleWatchlist(cell.getRow().getData().name);
+      };
+    }
+    return columnDef;
   });
 
   var rows = data.map(function(d, i) {
@@ -1340,6 +2123,7 @@ function buildTable(data, columns, colDefs) {
     r.rank = i + 1;
     if (d._seg) r.seg = d._seg;
     if (d.seg) r.seg = d.seg;
+    r._watched = isWatched(r.name);
     return r;
   });
 
@@ -1355,10 +2139,12 @@ function buildTable(data, columns, colDefs) {
       } else if (d._seg === 'Non-Life' || d.seg === 'Non-Life') {
         row.getElement().style.borderLeft = '2px solid rgba(0,204,255,0.3)';
       }
+      row.getElement().classList.toggle('is-watched', isWatched(d.name));
     },
   });
 
   table.on('rowClick', function(e, row) {
+    if (e.target && e.target.closest && e.target.closest('.watch-toggle')) return;
     var d = row.getData();
     var profile = lookupCompany(d.name);
     var html =
@@ -1743,9 +2529,12 @@ function renderHHI() {
   scope.segments.forEach(function(segment) {
     var hhi = calcHHI(segment.insurers);
     var level = getConcentrationLevel(hhi);
+    var maxHHI = 3000;
+    var barPct = Math.min(100, (hhi / maxHHI) * 100);
     html += '<div class="insight-card">' +
       '<div class="label">' + segment.label.toUpperCase() + ' HHI</div>' +
       '<div class="value" style="color:' + level.color + '">' + hhi.toFixed(1) + '</div>' +
+      '<div style="margin-top:4px;"><div class="bar-container"><div class="bar-fill" style="width:' + barPct + '%;background:' + level.color + '"></div><span style="font-size:7px;color:var(--gray2);flex-shrink:0;">' + barPct.toFixed(0) + '%</span></div></div>' +
       '<div class="desc">' + level.label + '</div>' +
     '</div>';
   });
@@ -1845,7 +2634,9 @@ function renderOverviewInsights(life, nonlife) {
       '<div class="label">Market Penetration Gap</div>' +
       '<div class="value" style="color:var(--purple)">' + (DATA.summary.global_penetration_avg_pct - DATA.summary.insurance_penetration_pct).toFixed(1) + 'pp</div>' +
       '<div class="desc">Below global average of ' + DATA.summary.global_penetration_avg_pct + '%</div>' +
-    '</div>';
+    '</div>' +
+    renderWatchlistMonitorHtml() +
+    generateOverviewAISummary(life, nonlife, total);
 }
 
 function renderSegmentInsights(latest, segment) {
@@ -1885,7 +2676,9 @@ function renderSegmentInsights(latest, segment) {
         '<div class="value" style="color:var(--green);font-size:9px;">' + growthLeaders + '</div>' +
         '<div class="desc">Growing >10% YoY</div>' +
       '</div>' +
-    '</div>';
+    '</div>' +
+    renderWatchlistMonitorHtml() +
+    generateSegmentAISummary(latest, segment);
 }
 
 function renderCompareInsights(life, nonlife) {
@@ -1909,7 +2702,9 @@ function renderCompareInsights(life, nonlife) {
       '<div class="label">Combined Market Premium</div>' +
       '<div class="value" style="color:var(--amber)">' + fmtCr(life.total_premium_cr + nonlife.total_premium_cr) + '</div>' +
       '<div class="desc">Life: ' + Math.round(life.total_premium_cr / (life.total_premium_cr + nonlife.total_premium_cr) * 100) + '% | Non-Life: ' + Math.round(nonlife.total_premium_cr / (life.total_premium_cr + nonlife.total_premium_cr) * 100) + '%</div>' +
-    '</div>';
+    '</div>' +
+    renderWatchlistMonitorHtml() +
+    generateCompareAISummary(life, nonlife);
 }
 
 // ─── Top Players Tab ────────────────────────────────────────────────
@@ -1978,19 +2773,25 @@ function renderPenetration() {
 function resolveCompanyName(input) {
   if (!input || !DATA) return null;
   var q = input.trim().toLowerCase();
-  for (var key in COMPANY_DB) {
-    if (key.toLowerCase().indexOf(q) !== -1 || q.indexOf(key.toLowerCase()) !== -1) {
-      return { name: key, profile: COMPANY_DB[key] };
-    }
-  }
+  var aliases = {
+    lic: 'life insurance corporation of india',
+    niacl: 'new india assurance',
+    newindia: 'new india assurance',
+  };
+  var dataQuery = aliases[q] || q;
   var allData = [].concat(DATA.life ? DATA.life.monthly_data : [], DATA.non_life ? DATA.non_life.monthly_data : []);
   for (var i = 0; i < allData.length; i++) {
     var insurers = allData[i].insurers || [];
     for (var j = 0; j < insurers.length; j++) {
       var n = insurers[j].name;
-      if (n.toLowerCase().indexOf(q) !== -1) {
+      if (n.toLowerCase() === dataQuery || n.toLowerCase().indexOf(dataQuery) !== -1) {
         return { name: n, profile: lookupCompany(n) };
       }
+    }
+  }
+  for (var key in COMPANY_DB) {
+    if (key.toLowerCase().indexOf(q) !== -1 || q.indexOf(key.toLowerCase()) !== -1) {
+      return { name: key, profile: COMPANY_DB[key] };
     }
   }
   return null;

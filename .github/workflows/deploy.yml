@@ -29,10 +29,23 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install Node dependencies
+        run: npm ci
+      - name: Install browser test runtime
+        run: npx playwright install --with-deps chromium
+      - name: Run contract tests
+        run: npm test
       - name: Fetch stock prices
         run: |
           pip install requests
           python data/fetch_stocks.py
+      - name: Run browser smoke test
+        run: npm run test:browser
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

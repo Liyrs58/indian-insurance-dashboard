@@ -1,8 +1,8 @@
 {
   "_meta": {
     "source": "IRDAI Flash Figures",
-    "generated_at": "2026-07-08 08:43:54",
-    "last_updated": "2026-07-08",
+    "generated_at": "2026-07-11 04:27:17",
+    "last_updated": "2026-07-11",
     "research_as_of": "2026-07-07",
     "months_available": [
       "2025-12",
@@ -38,18 +38,20 @@
       }
     ],
     "validation": {
-      "status": "warning",
+      "status": "ok",
       "issue_count": 20,
       "issues": [
         {
-          "severity": "warning",
-          "code": "large_period_drop",
-          "message": "life premium drops more than 50%; likely fiscal-year reset or mixed basis",
+          "severity": "info",
+          "code": "fiscal_year_reset",
+          "message": "life cumulative YTD premium resets between fiscal years",
           "segment": "life",
           "from_month": "2026-03",
           "to_month": "2026-05",
           "from_value": 459713.41,
-          "to_value": 62581.22
+          "to_value": 62581.22,
+          "from_fiscal_year": "FY2025-26",
+          "to_fiscal_year": "FY2026-27"
         },
         {
           "severity": "info",
@@ -142,14 +144,15 @@
           "yoy_growth_pct": 1665.14
         },
         {
-          "severity": "warning",
-          "code": "negative_value",
-          "message": "Agriculture Insurance Company of India has a negative premium/share in non_life 2026-05",
+          "severity": "info",
+          "code": "signed_source_adjustment",
+          "message": "Agriculture Insurance Company of India has a signed negative source premium/share in non_life 2026-05; retained as reported",
           "segment": "non_life",
           "month": "2026-05",
           "insurer": "Agriculture Insurance Company of India",
           "premium_cr": -89.56,
-          "market_share_pct": -0.15
+          "market_share_pct": -0.15,
+          "source_file": "NonLife_GDP_May2026.xlsx"
         },
         {
           "severity": "info",
@@ -179,24 +182,27 @@
           "yoy_growth_pct": 1421.5
         },
         {
-          "severity": "warning",
-          "code": "negative_value",
-          "message": "Agriculture Insurance Company of India has a negative premium/share in non_life 2026-06",
+          "severity": "info",
+          "code": "signed_source_adjustment",
+          "message": "Agriculture Insurance Company of India has a signed negative source premium/share in non_life 2026-06; retained as reported",
           "segment": "non_life",
           "month": "2026-06",
           "insurer": "Agriculture Insurance Company of India",
           "premium_cr": -147.32,
-          "market_share_pct": -0.17
+          "market_share_pct": -0.17,
+          "source_file": "NonLife_GDP_June2026.pdf"
         },
         {
-          "severity": "warning",
-          "code": "large_period_drop",
-          "message": "non_life premium drops more than 50%; likely fiscal-year reset or mixed basis",
+          "severity": "info",
+          "code": "fiscal_year_reset",
+          "message": "non_life cumulative YTD premium resets between fiscal years",
           "segment": "non_life",
           "from_month": "2026-03",
           "to_month": "2026-05",
           "from_value": 335918.07,
-          "to_value": 60594.06
+          "to_value": 60594.06,
+          "from_fiscal_year": "FY2025-26",
+          "to_fiscal_year": "FY2026-27"
         },
         {
           "severity": "info",
@@ -221,6 +227,29 @@
         }
       ]
     },
+    "source_hygiene": {
+      "raw_files_processed": 10,
+      "records_loaded": 10,
+      "records_retained": 9,
+      "records_dropped": 1,
+      "filename_header_mismatches": [
+        {
+          "source_file": "Life_FirstYear_Jan2026.xlsx",
+          "filename_month": "2026-01",
+          "header_month": "2026-02",
+          "selected_month": "2026-02"
+        }
+      ],
+      "duplicate_resolutions": [
+        {
+          "segment": "life",
+          "month": "2026-02",
+          "kept_source_file": "Life_FirstYear_Feb2026.xlsx",
+          "dropped_source_file": "Life_FirstYear_Jan2026.xlsx",
+          "reason": "higher month-source confidence"
+        }
+      ]
+    },
     "notes": "Data extracted from local IRDAI/GIC flash source files. Headline market totals use the latest shared life/non-life month only."
   },
   "non_life": {
@@ -231,7 +260,7 @@
         "fiscal_year": "FY2025-26",
         "period_type": "cumulative_ytd",
         "source_file": "NonLife_GDP_Dec2025.xlsx",
-        "generated_at": "2026-07-08 08:43:54",
+        "generated_at": "2026-07-11 04:27:17",
         "insurers": [
           {
             "name": "New India Assurance",
@@ -483,7 +512,7 @@
         "fiscal_year": "FY2025-26",
         "period_type": "cumulative_ytd",
         "source_file": "NonLife_GDP_Jan2026.xlsx",
-        "generated_at": "2026-07-08 08:43:54",
+        "generated_at": "2026-07-11 04:27:17",
         "insurers": [
           {
             "name": "New India Assurance",
@@ -735,7 +764,7 @@
         "fiscal_year": "FY2025-26",
         "period_type": "cumulative_ytd",
         "source_file": "NonLife_GDP_Feb2026.xlsx",
-        "generated_at": "2026-07-08 08:43:54",
+        "generated_at": "2026-07-11 04:27:17",
         "insurers": [
           {
             "name": "New India Assurance",
@@ -987,7 +1016,7 @@
         "fiscal_year": "FY2025-26",
         "period_type": "cumulative_ytd",
         "source_file": "NonLife_GDP_March2026.xlsx",
-        "generated_at": "2026-07-08 08:43:54",
+        "generated_at": "2026-07-11 04:27:17",
         "insurers": [
           {
             "name": "New India Assurance",
@@ -1239,7 +1268,7 @@
         "fiscal_year": "FY2026-27",
         "period_type": "cumulative_ytd",
         "source_file": "NonLife_GDP_May2026.xlsx",
-        "generated_at": "2026-07-08 08:43:54",
+        "generated_at": "2026-07-11 04:27:17",
         "insurers": [
           {
             "name": "New India Assurance",
@@ -1498,7 +1527,7 @@
         "fiscal_year": "FY2026-27",
         "period_type": "cumulative_ytd",
         "source_file": "NonLife_GDP_June2026.pdf",
-        "generated_at": "2026-07-08 08:43:54",
+        "generated_at": "2026-07-11 04:27:17",
         "insurers": [
           {
             "name": "New India Assurance",
@@ -1761,7 +1790,7 @@
         "fiscal_year": "FY2025-26",
         "period_type": "cumulative_ytd",
         "source_file": "Life_FirstYear_Feb2026.xlsx",
-        "generated_at": "2026-07-08 08:43:54",
+        "generated_at": "2026-07-11 04:27:17",
         "insurers": [
           {
             "name": "Life Insurance Corporation of India",
@@ -1954,7 +1983,7 @@
         "fiscal_year": "FY2025-26",
         "period_type": "cumulative_ytd",
         "source_file": "Life_FirstYear_March2026.xlsx",
-        "generated_at": "2026-07-08 08:43:54",
+        "generated_at": "2026-07-11 04:27:17",
         "insurers": [
           {
             "name": "Life Insurance Corporation of India",
@@ -2144,7 +2173,7 @@
         "fiscal_year": "FY2026-27",
         "period_type": "cumulative_ytd",
         "source_file": "Life_FirstYear_May2026.xlsx",
-        "generated_at": "2026-07-08 08:43:54",
+        "generated_at": "2026-07-11 04:27:17",
         "insurers": [
           {
             "name": "Life Insurance Corporation of India",

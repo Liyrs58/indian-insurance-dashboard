@@ -1,2 +1,3 @@
 .DS_Store
+node_modules/
 data/irdai-excel/*.pdf

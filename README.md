@@ -1,9 +1,9 @@
 # Indian Insurance Market Dashboard
 
-Bloomberg-terminal-style dashboard for Indian insurance industry data.
+Market-terminal dashboard for Indian insurance industry data.
 Parses IRDAI Flash Figures, Life Council, and GIC source files into ranked
 insurer tables, comparable-period views, trend charts, HHI concentration
-analysis, and live NSE stock prices for listed insurers.
+analysis, and scheduled NSE stock snapshots for listed insurers.
 
 **Live:** https://liyrs58.github.io/indian-insurance-dashboard/
 
@@ -11,10 +11,10 @@ analysis, and live NSE stock prices for listed insurers.
 
 | Area | What It Shows |
 |------|---------------|
-| **Data Engineering** | Python pipeline parses Excel source files → validated JSON with schema enforcement, duplicate detection, period-type labelling, and audit metadata |
-| **Frontend Architecture** | Bloomberg-terminal-style grid layout, TradingView LightweightCharts, Tabulator tables, keyboard-driven navigation, responsive down to 500px |
-| **Real-Time Integration** | NSE stock prices fetched every hour via GitHub Actions, auto-refreshed in-browser every 5 minutes |
-| **Testing & Quality** | 8 contract tests (Node) for data integrity, source quality, label leakage, and interaction fixes — run in CI on every push |
+| **Data Engineering** | Python pipeline parses Excel/PDF source files → validated JSON with schema enforcement, duplicate detection, period-type labelling, and source-hygiene audit metadata |
+| **Frontend Architecture** | Market-terminal grid layout, TradingView LightweightCharts, Tabulator tables, persistent watchlist monitor, keyboard-driven navigation, responsive down to 500px |
+| **Data Refresh Integration** | NSE stock prices fetched every hour via GitHub Actions, auto-refreshed in-browser every 5 minutes |
+| **Testing & Quality** | Node contract tests plus Playwright browser smoke coverage for data integrity, source quality, label leakage, interaction fixes, desktop layout, and mobile audit behavior |
 | **CI/CD** | GitHub Actions → GitHub Pages: auto-deploy on push + hourly scheduled stock refresh |
 
 ## Preview
@@ -28,13 +28,39 @@ python3 -m http.server 8080
 
 ```bash
 npm test
+npm run test:browser
 node --check js/dashboard.js
 python3 -m py_compile data/parse_irdai.py data/fetch_stocks.py
 ```
 
-The parser stores source freshness, selected report months, and validation
-warnings in `data/irdai-processed.json` under `_meta`. The dashboard shows a
-snapshot status with validation tier instead of a live-feed claim.
+The parser stores source freshness, selected report months, validation issues,
+source caveats, and parser hygiene decisions in `data/irdai-processed.json`
+under `_meta`. The dashboard shows a snapshot status with validation tier
+instead of a live-feed claim.
+
+Watchlist selections are stored locally in `localStorage` under
+`irdai_watchlist`. Use the star column or assistant commands such as
+`watch LIC`, `unwatch LIC`, and `watchlist`.
+
+Alert thresholds are stored locally in `localStorage` under
+`irdai_alert_config`. Use assistant commands such as `alert config`, `set alert growth 12`,
+`set alert share 0.75`, and `reset alerts` to tune watchlist severity rules
+without editing code.
+
+The assistant also supports command-line mnemonics for faster terminal-style
+navigation. Press `Ctrl+K` to focus the command line and show available commands,
+then use entries such as `TOPLIFE`, `TOPNL`, `TOPALL`, `MKT`, `FIND LIC`,
+`WLIST`, `ALERTS`, `AUDIT`, and `EXPORTAUDIT`. Recent commands are stored in
+`localStorage` under `irdai_command_history` and can be recalled with
+`ArrowUp` / `ArrowDown`.
+
+Saved view presets are stored locally in `localStorage` under
+`irdai_saved_views`. Use commands such as `save view nonlife desk`, `load view
+nonlife desk`, `views`, and `delete view nonlife desk`.
+
+Use `export audit` in the assistant to download a Markdown audit pack covering
+snapshot metadata, validation status, source hygiene, active scope, and local
+watchlist alerts.
 
 ## Data Pipeline
 

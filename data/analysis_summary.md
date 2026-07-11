@@ -25,4 +25,5 @@
 ## Data Caveats
 - Figures are provisional and unaudited where source flash reports say so.
 - Cumulative YTD figures reset at fiscal-year boundaries; avoid reading fiscal resets as market collapses.
-- Validation warnings are stored in data/irdai-processed.json under _meta.validation.
+- Source-hygiene metadata records raw files processed, duplicate resolutions, and filename/header month mismatches.
+- Validation issues and source caveats are stored in data/irdai-processed.json under _meta.validation.
