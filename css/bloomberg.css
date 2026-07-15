@@ -84,6 +84,7 @@ body.loading #ticker {
   --yellow:    #ffee44;
   --orange:    #ff8844;
   --pink:      #ff44aa;
+  --sans:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --mono:      'IBM Plex Mono', 'Courier New', monospace;
   --fs-xs:     9px;
   --fs-sm:     10px;
@@ -122,7 +123,7 @@ body.loading #ticker {
 html, body {
   background: var(--bg);
   color: var(--amber);
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: var(--fs-md);
   min-height: 100vh;
   height: 100%;
@@ -368,6 +369,7 @@ body::after {
 }
 
 .kpi-value {
+  font-family: var(--mono);
   font-size: 14px;
   font-weight: 600;
   margin-top: 1px;
@@ -536,7 +538,7 @@ body::after {
   border: 1px solid var(--border2);
   background: transparent;
   color: var(--gray2);
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
@@ -625,7 +627,7 @@ body::after {
 .tf-btn {
   padding: 2px 7px;
   font-size: 8px;
-  font-family: var(--mono);
+  font-family: var(--sans);
   background: transparent;
   border: 1px solid var(--border2);
   color: var(--gray);
@@ -673,7 +675,7 @@ body::after {
 .chat-header-icon { color: var(--amber); font-size: 8px; }
 .chat-header-title { color: var(--amber); font-size: 8px; letter-spacing: 1px; font-weight: 600; text-transform: uppercase; flex: 1; }
 .chat-header-status { font-size: 8px; color: var(--gray2); }
-.chat-clear { background: none; border: none; color: var(--gray); cursor: pointer; font-size: 10px; padding: 0 4px; font-family: var(--mono); }
+.chat-clear { background: none; border: none; color: var(--gray); cursor: pointer; font-size: 10px; padding: 0 4px; font-family: var(--sans); }
 .chat-clear:hover { color: var(--amber); }
 
 .chat-messages {
@@ -748,7 +750,7 @@ body::after {
   border: 1px solid var(--border2);
   outline: none;
   color: var(--amber2);
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: var(--fs-sm);
   padding: 4px 6px;
   letter-spacing: 0.5px;
@@ -762,7 +764,7 @@ body::after {
   background: var(--amber-dim);
   border: none;
   color: var(--bg);
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 8px;
   font-weight: 700;
   padding: 4px 10px;
@@ -1113,7 +1115,7 @@ body.demo-mode #dataStatus {
   background: var(--bg4);
   border: 1px solid var(--border2);
   color: var(--amber);
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 8px;
   padding: 1px 4px;
   cursor: pointer;
