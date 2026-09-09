@@ -37,7 +37,7 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
       - name: Install browser test runtime
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
       - name: Run contract tests
         run: npm test
       - name: Fetch stock prices
